@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一新中學理財 × 投資體驗課 (Web版)</title>
+    
+    <!-- 1. 載入 Tailwind CSS (樣式) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. 載入 Vue 3 (核心邏輯) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- 3. 載入 Chart.js (圖表) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- 4. 載入 FontAwesome (圖標) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* 自定義動畫與樣式優化 */
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: #f8fafc; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .transition-all { transition: all 0.3s ease; }
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #ffffff; border: 2px solid currentColor; cursor: pointer; margin-top: -8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #e2e8f0; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="app" class="min-h-screen flex flex-col">
+        
+        <!-- 頂部導航 -->
+        <nav class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-50">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-2 font-bold text-lg">
+                    <span class="bg-emerald-500 text-white px-2 py-1 rounded text-sm">一新</span>
+                    <span class="hidden md:inline">理財體驗工作坊 (THB版)</span>
+                    <span class="md:hidden">理財體驗</span>
+                </div>
+                <div class="space-x-2 text-sm">
+                    <button @click="view = 'welcome'" :class="{'text-emerald-400': view==='welcome'}" class="hover:text-emerald-400 transition px-2">首頁</button>
+                    <button @click="view = 'teacher'" :class="{'text-emerald-400': view==='teacher'}" class="hover:text-emerald-400 transition px-2">老師後台</button>
+                    <button @click="view = 'student'" :class="{'text-emerald-400': view==='student'}" class="hover:text-emerald-400 transition px-2">學生介面</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主要內容區 -->
+        <main class="container mx-auto p-4 md:p-6 flex-grow">
+            
+            <!-- 1. 歡迎畫面 -->
+            <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-fade-in">
+                <div class="text-center space-y-2">
+                    <h1 class="text-4xl md:text-6xl font-bold text-slate-800">歡迎來到一新中學</h1>
+                    <p class="text-xl text-slate-500">Yi-Xin Financial Literacy Workshop</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+                    <button @click="view = 'teacher'" class="group p-8 bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all border-2 border-transparent hover:border-emerald-400 text-left relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-chalkboard-user text-9xl text-emerald-500"></i></div>
+                        <h3 class="text-2xl font-bold mb-2 text-slate-800">我是老師 / 主持人</h3>
+                        <p class="text-slate-500">Teacher Dashboard</p>
+                    </button>
+                    <button @click="view = 'student'" class="group p-8 bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all border-2 border-transparent hover:border-amber-400 text-left relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-users text-9xl text-amber-500"></i></div>
+                        <h3 class="text-2xl font-bold mb-2 text-slate-800">我是學生 / 小組</h3>
+                        <p class="text-slate-500">Student Group</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. 老師後台 -->
+            <div v-if="view === 'teacher'" class="space-y-6">
+                <!-- 控制面板 -->
+                <div class="bg-white p-4 rounded-xl shadow-sm flex flex-wrap gap-4 justify-between items-center sticky top-20 z-40 border-b border-slate-100">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-slate-500 font-medium hidden md:inline">當前階段：</span>
+                        <div class="flex space-x-1 bg-slate-100 p-1 rounded-lg">
+                            <button v-for="s in [1, 2, 3]" :key="s" @click="setStage(s)" 
+                                :class="stage === s ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'"
+                                class="px-4 py-2 rounded-md text-sm font-bold transition">
+                                {{ ['預算規劃', '投資競賽', '總結反思'][s-1] }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button v-if="stage === 1" @click="triggerInflation" :disabled="inflationTriggered" 
+                            :class="inflationTriggered ? 'bg-gray-400 cursor-not-allowed' : 'bg-rose-500 hover:bg-rose-600 animate-pulse'"
+                            class="flex items-center px-4 py-2 rounded-lg font-bold text-white shadow-lg transition">
+                            <i class="fa-solid fa-triangle-exclamation mr-2"></i> {{ inflationTriggered ? '通膨已觸發' : '觸發通膨 (10%)' }}
+                        </button>
+                        <button v-if="stage === 2" @click="drawFateCard" 
+                            class="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-lg transition">
+                            <i class="fa-solid fa-dice mr-2"></i> 抽命運卡 (Round {{ round + 1 }})
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 老師：階段 1 預算監控 -->
+                <div v-if="stage === 1" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div v-for="group in groups" :key="group.id" class="bg-white rounded-2xl shadow p-5 border-l-4 transition-all hover:shadow-md" :class="getBudgetStatusColor(group)">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-bold text-lg">{{ group.name }}</h3>
+                            <div class="w-3 h-3 rounded-full shadow" :class="getTrafficLightColor(group)"></div>
+                        </div>
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between text-slate-500">
+                                <span>總支出</span>
+                                <span class="font-mono">{{ formatMoney(calculateTotalExpense(group)) }}</span>
+                            </div>
+                            <div class="flex justify-between font-bold">
+                                <span :class="calculateBalance(group) < 0 ? 'text-rose-500' : 'text-emerald-600'">結餘</span>
+                                <span class="font-mono" :class="calculateBalance(group) < 0 ? 'text-rose-500' : 'text-emerald-600'">
+                                    {{ formatMoney(calculateBalance(group)) }}
+                                </span>
+                            </div>
+                            <div v-if="isFoodHigh(group)" class="mt-2 text-xs bg-rose-50 text-rose-600 p-1 rounded flex items-center">
+                                <i class="fa-solid fa-burger mr-1"></i> 食物開銷過高
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 老師：階段 2 投資排行 -->
+                <div v-if="stage === 2" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 排行榜 -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4 flex items-center text-slate-800">
+                            <i class="fa-solid fa-ranking-star mr-2 text-emerald-500"></i> 即時資產排行
+                        </h3>
+                        <div class="space-y-3">
+                            <div v-for="(group, idx) in sortedGroups" :key="group.id" class="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition">
+                                <div class="flex items-center">
+                                    <span :class="idx < 3 ? 'bg-amber-400 text-white' : 'bg-slate-200 text-slate-500'" class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-3">
+                                        {{ idx + 1 }}
+                                    </span>
+                                    <div>
+                                        <div class="font-bold">{{ group.name }}</div>
+                                        <div class="text-xs text-slate-400 capitalize flex items-center">
+                                            <span class="w-2 h-2 rounded-full mr-1" :class="group.riskProfile === 'aggressive' ? 'bg-rose-500' : 'bg-emerald-500'"></span>
+                                            {{ group.riskProfile === 'aggressive' ? '積極型' : '穩健型' }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="font-mono font-bold text-emerald-600">{{ formatMoney(Math.round(group.totalAssets)) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 圖表區 -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4">資產分佈概況</h3>
+                        <div class="h-64">
+                            <canvas id="teacherAssetChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 老師：階段 3 總結 -->
+                <div v-if="stage === 3" class="bg-white rounded-2xl shadow-lg p-6 max-w-4xl mx-auto">
+                    <h3 class="text-2xl font-bold mb-6 text-center">20 年後的財富模擬</h3>
+                    <div class="h-80 w-full">
+                        <canvas id="teacherLineChart"></canvas>
+                    </div>
+                    <div class="mt-8 p-6 bg-slate-50 rounded-xl">
+                        <h4 class="font-bold text-lg mb-4 text-slate-700">反思討論</h4>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600">
+                            <li>如果你能回到遊戲一開始，你會改變你的預算分配嗎？</li>
+                            <li>在命運卡出現導致資產縮水時，你當下的心情是如何？</li>
+                            <li>看到 20 年後的複利差距，你對於「現在的消費 vs 未來的儲蓄」有什麼新看法？</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 學生介面 -->
+            <div v-if="view === 'student'" class="max-w-md mx-auto space-y-6 pb-20">
+                <!-- 模擬身份選擇 -->
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <span class="text-sm text-slate-500"><i class="fa-solid fa-user-tag mr-1"></i>我是：</span>
+                    <select v-model="currentGroupId" class="bg-slate-100 border-none rounded-lg py-1 px-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
+                    </select>
+                </div>
+
+                <!-- 學生：階段 1 預算 -->
+                <div v-if="stage === 1" class="bg-white rounded-2xl shadow-lg p-6 space-y-6" :class="{'border-2 border-rose-500': inflationTriggered}">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">預算規劃</h2>
+                            <p class="text-slate-400 text-xs">Monthly Budget</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">本月收入</div>
+                            <div class="text-xl font-mono font-bold text-emerald-600">{{ formatMoney(20000) }}</div>
+                        </div>
+                    </div>
+
+                    <div v-if="inflationTriggered" class="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-lg text-sm flex items-center animate-bounce">
+                        <i class="fa-solid fa-triangle-exclamation mr-3 text-xl"></i>
+                        <div><strong>通膨來襲！物價上漲 10%</strong><br>請重新調整以免透支！</div>
+                    </div>
+
+                    <!-- 圓餅圖容器 -->
+                    <div class="h-48 relative flex justify-center">
+                        <canvas id="studentPieChart"></canvas>
+                        <!-- 中央結餘顯示 -->
+                        <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none mt-4">
+                            <span class="font-bold text-sm" :class="currentGroupBalance < 0 ? 'text-rose-500' : 'text-slate-600'">
+                                {{ currentGroupBalance < 0 ? '透支' : '剩餘' }}
+                            </span>
+                            <span class="font-mono font-bold text-lg" :class="currentGroupBalance < 0 ? 'text-rose-500' : 'text-slate-500'">
+                                {{ formatMoney(Math.abs(currentGroupBalance)) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 輸入滑桿 -->
+                    <div class="space-y-4">
+                        <div v-for="(cat, key) in categories" :key="key">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="font-medium text-slate-700 flex items-center">
+                                    <i :class="cat.icon" class="mr-2 w-4 text-center" :style="{color: cat.color}"></i> {{ cat.label }}
+                                </span>
+                                <span class="font-mono text-slate-500">{{ formatMoney(Math.round(currentGroup.budget[key] * (inflationTriggered ? 1.1 : 1))) }}</span>
+                            </div>
+                            <input type="range" min="0" max="10000" step="500" v-model.number="currentGroup.budget[key]" 
+                                @input="updateStudentChart" class="w-full h-2 rounded-lg cursor-pointer" :style="{color: cat.color}">
+                            <div v-if="key === 'food' && isFoodHigh(currentGroup)" class="text-xs text-rose-500 mt-1 pl-6">
+                                ⚠️ 警告：伙食費佔比過高！
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 學生：階段 2 投資 -->
+                <div v-if="stage === 2" class="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+                    <div>
+                        <h2 class="text-xl font-bold mb-1">投資配置</h2>
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="text-sm text-slate-500">可用資金</span>
+                            <span class="font-mono font-bold" :class="investmentRemaining < 0 ? 'text-rose-500' : 'text-slate-700'">
+                                {{ investmentRemaining === 0 ? '配置完成' : formatMoney(investmentRemaining) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 風險屬性 -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button @click="currentGroup.riskProfile = 'conservative'" 
+                            class="p-3 rounded-xl border-2 text-sm font-bold transition flex flex-col items-center"
+                            :class="currentGroup.riskProfile === 'conservative' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-400'">
+                            <i class="fa-solid fa-piggy-bank mb-2 text-xl"></i> 穩健型 (綠)
+                        </button>
+                        <button @click="currentGroup.riskProfile = 'aggressive'" 
+                            class="p-3 rounded-xl border-2 text-sm font-bold transition flex flex-col items-center"
+                            :class="currentGroup.riskProfile === 'aggressive' ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-slate-200 text-slate-400'">
+                            <i class="fa-solid fa-rocket mb-2 text-xl"></i> 積極型 (紅)
+                        </button>
+                    </div>
+
+                    <!-- 資產輸入 -->
+                    <div class="space-y-5">
+                        <div v-for="(opt, key) in investmentOptions" :key="key">
+                            <div class="flex justify-between mb-1">
+                                <div>
+                                    <div class="font-bold text-slate-700 text-sm">{{ opt.label }}</div>
+                                    <div class="text-xs text-slate-400">Risk: {{ opt.risk }} | Est: {{ opt.ret }}</div>
+                                </div>
+                                <div class="font-mono text-slate-700">{{ formatMoney(currentGroup.investment[key]) }}</div>
+                            </div>
+                            <input type="range" min="0" max="100000" step="5000" v-model.number="currentGroup.investment[key]" 
+                                class="w-full h-2 rounded-lg cursor-pointer accent-slate-600">
+                        </div>
+                    </div>
+                    
+                    <div v-if="investmentRemaining !== 0" class="text-center text-sm text-rose-500 font-bold bg-rose-50 p-2 rounded">
+                        注意：總金額必須等於 100,000
+                    </div>
+                </div>
+
+                <!-- 學生：階段 3 結束 -->
+                <div v-if="stage === 3" class="bg-white rounded-2xl shadow-lg p-10 text-center">
+                    <i class="fa-solid fa-graduation-cap text-6xl text-emerald-500 mb-4"></i>
+                    <h2 class="text-2xl font-bold mb-2">課程結束！</h2>
+                    <p class="text-slate-500">請抬頭看大螢幕，參與老師的總結討論。</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- 邏輯腳本 -->
+    <script>
+        const { createApp, ref, computed, watch, nextTick, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                // --- 狀態 ---
+                const view = ref('welcome'); // welcome, teacher, student
+                const stage = ref(1);
+                const inflationTriggered = ref(false);
+                const round = ref(0);
+                const currentGroupId = ref(1);
+                const INCOME = 20000;
+                const INITIAL_CAPITAL = 100000;
+
+                // 初始化 13 組
+                const groups = ref(Array.from({ length: 13 }, (_, i) => ({
+                    id: i + 1,
+                    name: `第 ${i + 1} 組`,
+                    budget: { food: 6000, transport: 3000, entertainment: 2000, education: 4000, family: 5000 },
+                    investment: { savings: 40000, etf: 30000, stocks: 20000, entrepreneurship: 10000 },
+                    riskProfile: 'conservative',
+                    totalAssets: 100000,
+                    history: [100000]
+                })));
+
+                // 類別設定
+                const categories = {
+                    food: { label: '食物', icon: 'fa-solid fa-bowl-food', color: '#10B981' },
+                    transport: { label: '交通', icon: 'fa-solid fa-bus', color: '#3B82F6' },
+                    entertainment: { label: '娛樂', icon: 'fa-solid fa-gamepad', color: '#F59E0B' },
+                    education: { label: '學習', icon: 'fa-solid fa-book', color: '#8B5CF6' },
+                    family: { label: '家庭', icon: 'fa-solid fa-house', color: '#EF4444' }
+                };
+
+                const investmentOptions = {
+                    savings: { label: '定存', risk: 'Low', ret: '2%' },
+                    etf: { label: 'ETF', risk: 'Mid', ret: '6-8%' },
+                    stocks: { label: '個股', risk: 'High', ret: '±20%' },
+                    entrepreneurship: { label: '創業', risk: 'Extreme', ret: '???' }
+                };
+
+                // --- 計算屬性 ---
+                const currentGroup = computed(() => groups.value.find(g => g.id === currentGroupId.value));
+                
+                const calculateTotalExpense = (group) => {
+                    const rawTotal = Object.values(group.budget).reduce((a, b) => a + b, 0);
+                    return inflationTriggered.value ? rawTotal * 1.1 : rawTotal;
+                };
+
+                const calculateBalance = (group) => INCOME - calculateTotalExpense(group);
+                
+                const currentGroupBalance = computed(() => calculateBalance(currentGroup.value));
+
+                const isFoodHigh = (group) => {
+                    const foodExp = group.budget.food * (inflationTriggered.value ? 1.1 : 1);
+                    return (foodExp / INCOME) > 0.35;
+                };
+
+                const getTrafficLightColor = (group) => {
+                    const bal = calculateBalance(group);
+                    if (bal < 0) return 'bg-rose-500';
+                    if (bal < 2000) return 'bg-amber-400';
+                    return 'bg-emerald-500';
+                };
+
+                const getBudgetStatusColor = (group) => {
+                    const bal = calculateBalance(group);
+                    if (bal < 0) return 'border-l-rose-500';
+                    if (bal < 2000) return 'border-l-amber-400';
+                    return 'border-l-emerald-500';
+                };
+
+                const investmentRemaining = computed(() => {
+                    const total = Object.values(currentGroup.value.investment).reduce((a, b) => a + b, 0);
+                    return INITIAL_CAPITAL - total;
+                });
+
+                const sortedGroups = computed(() => {
+                    return [...groups.value].sort((a, b) => b.totalAssets - a.totalAssets);
+                });
+
+                // --- 方法 ---
+                const setStage = (s) => {
+                    stage.value = s;
+                    nextTick(() => {
+                        if (view.value === 'teacher') initTeacherCharts();
+                        if (view.value === 'student') updateStudentChart();
+                    });
+                };
+
+                const triggerInflation = () => {
+                    inflationTriggered.value = true;
+                    // 強制重繪圖表
+                    if (view.value === 'student') updateStudentChart();
+                };
+
+                const formatMoney = (val) => new Intl.NumberFormat('th-TH').format(val);
+
+                const drawFateCard = () => {
+                    const cards = [
+                        { title: "股市大漲 (Bull Market)", effect: { stocks: 1.2, etf: 1.08, savings: 1.01, entrepreneurship: 1.0 } },
+                        { title: "金融海嘯 (Market Crash)", effect: { stocks: 0.7, etf: 0.9, savings: 1.01, entrepreneurship: 0.8 } },
+                        { title: "創業獨角獸 (Unicorn!)", effect: { stocks: 1.0, etf: 1.02, savings: 1.0, entrepreneurship: 2.0 } },
+                        { title: "穩健成長 (Steady Growth)", effect: { stocks: 1.05, etf: 1.04, savings: 1.02, entrepreneurship: 1.05 } },
+                    ];
+                    const card = cards[Math.floor(Math.random() * cards.length)];
+                    
+                    groups.value.forEach(g => {
+                        const newInv = {
+                            savings: g.investment.savings * card.effect.savings,
+                            etf: g.investment.etf * card.effect.etf,
+                            stocks: g.investment.stocks * card.effect.stocks,
+                            entrepreneurship: g.investment.entrepreneurship * card.effect.entrepreneurship
+                        };
+                        const total = Object.values(newInv).reduce((a, b) => a + b, 0);
+                        g.investment = newInv;
+                        g.totalAssets = total;
+                        g.history.push(total);
+                    });
+                    round.value++;
+                    alert(`命運卡：${card.title}\n資產價值已更新！`);
+                    nextTick(initTeacherCharts);
+                };
+
+                // --- Chart.js 整合 ---
+                let studentChartInstance = null;
+                let teacherAssetChartInstance = null;
+                let teacherLineChartInstance = null;
+
+                const updateStudentChart = () => {
+                    if (view.value !== 'student' || stage.value !== 1) return;
+                    const ctx = document.getElementById('studentPieChart');
+                    if (!ctx) return;
+
+                    const dataValues = Object.keys(categories).map(k => currentGroup.value.budget[k]);
+                    const bgColors = Object.values(categories).map(c => c.color);
+
+                    if (studentChartInstance) {
+                        studentChartInstance.data.datasets[0].data = dataValues;
+                        studentChartInstance.update();
+                    } else {
+                        studentChartInstance = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: Object.values(categories).map(c => c.label),
+                                datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 0 }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+                        });
+                    }
+                };
+
+                const initTeacherCharts = () => {
+                    if (view.value !== 'teacher') return;
+
+                    // 1. Asset Bar Chart (Stage 2)
+                    if (stage.value === 2) {
+                        const ctx = document.getElementById('teacherAssetChart');
+                        if (ctx) {
+                            if (teacherAssetChartInstance) teacherAssetChartInstance.destroy();
+                            teacherAssetChartInstance = new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: groups.value.map(g => g.id),
+                                    datasets: [
+                                        { label: '儲蓄', data: groups.value.map(g => g.investment.savings), backgroundColor: '#10B981', stack: 'Stack 0' },
+                                        { label: 'ETF', data: groups.value.map(g => g.investment.etf), backgroundColor: '#3B82F6', stack: 'Stack 0' },
+                                        { label: '股票', data: groups.value.map(g => g.investment.stocks), backgroundColor: '#F59E0B', stack: 'Stack 0' },
+                                        { label: '創業', data: groups.value.map(g => g.investment.entrepreneurship), backgroundColor: '#EF4444', stack: 'Stack 0' },
+                                    ]
+                                },
+                                options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false } } }
+                            });
+                        }
+                    }
+
+                    // 2. Line Chart (Stage 3)
+                    if (stage.value === 3) {
+                        const ctx = document.getElementById('teacherLineChart');
+                        if (ctx) {
+                            if (teacherLineChartInstance) teacherLineChartInstance.destroy();
+                            
+                            // 產生 20 年數據
+                            const years = Array.from({length: 21}, (_, i) => `Year ${i}`);
+                            const datasets = groups.value.slice(0, 5).map((g, i) => {
+                                const rate = g.riskProfile === 'aggressive' ? 1.08 : 1.04;
+                                const data = years.map((_, y) => g.totalAssets * Math.pow(rate, y));
+                                const colors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6'];
+                                return { label: g.name, data, borderColor: colors[i % colors.length], fill: false, tension: 0.4 };
+                            });
+
+                            teacherLineChartInstance = new Chart(ctx, {
+                                type: 'line',
+                                data: { labels: years, datasets },
+                                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false } }
+                            });
+                        }
+                    }
+                };
+
+                // 監聽變化
+                watch(() => currentGroup.value.budget, updateStudentChart, { deep: true });
+                watch(view, () => nextTick(() => {
+                    if (view.value === 'student' && stage.value === 1) updateStudentChart();
+                    if (view.value === 'teacher') initTeacherCharts();
+                }));
+                
+                return {
+                    view, stage, groups, currentGroupId, currentGroup,
+                    inflationTriggered, round, triggerInflation, drawFateCard, setStage,
+                    categories, investmentOptions, investmentRemaining,
+                    formatMoney, calculateBalance, calculateTotalExpense, isFoodHigh,
+                    getTrafficLightColor, getBudgetStatusColor, currentGroupBalance, sortedGroups,
+                    updateStudentChart
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
