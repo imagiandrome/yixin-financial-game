@@ -438,9 +438,12 @@
                             if(!remoteData.groups) remoteData.groups = JSON.parse(JSON.stringify(defaultGroups));
                             sessionData.value = remoteData;
                             
-                            // 學生在連線後，檢查是否已經選組。如果沒選，就停留在選組大廳
-                            if(view.value.startsWith('student') && myGroupIndex.value === null) {
+                            // 學生連線成功後，檢查是否有選組。沒有就停留在選組大廳。
+                            if(view.value === 'student-game' && myGroupIndex.value === null) {
                                 view.value = 'student-lobby';
+                            } else if (view.value === 'student-lobby') {
+                                // 如果在 lobby，但數據來了，確保頁面不會跳走
+                                view.value = 'student-lobby'; 
                             }
                             
                         } else {
@@ -512,6 +515,7 @@
                 };
 
                 const confirmGroupSelection = (idx) => {
+                    // 修正：點擊後，更新 myGroupIndex，並切換到遊戲畫面
                     myGroupIndex.value = idx;
                     view.value = 'student-game';
                     localStorage.setItem('yixinGroup', idx);
