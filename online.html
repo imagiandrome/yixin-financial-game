@@ -439,12 +439,9 @@
                             sessionData.value = remoteData;
                             
                             // 學生連線成功後，檢查是否有選組。沒有就停留在選組大廳。
-                            if(view.value === 'student-game' && myGroupIndex.value === null) {
+                            if(view.value.startsWith('student') && myGroupIndex.value === null) {
                                 view.value = 'student-lobby';
-                            } else if (view.value === 'student-lobby') {
-                                // 如果在 lobby，但數據來了，確保頁面不會跳走
-                                view.value = 'student-lobby'; 
-                            }
+                            } 
                             
                         } else {
                             if (view.value.startsWith('student')) {
