@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一新中學理財 v3.0 (雲端版)</title>
+    <title>一新中學理財 v3.1 (最終修復版)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,7 +50,7 @@
         <nav class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-50">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-2 font-bold text-lg">
-                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.0</span>
+                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.1 最終修復版</span>
                     <span class="hidden md:inline">一新中學理財 (雲端版)</span>
                     <div class="flex items-center ml-4 text-xs font-normal">
                         <span class="status-dot" :class="dbConnected ? 'status-online' : 'status-offline'"></span>
@@ -120,7 +120,6 @@
                     class="p-4 rounded-xl border-2 hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600 transition text-lg font-bold text-slate-600 border-slate-200 shadow-sm bg-white"
                     :class="myGroupIndex === idx ? 'border-blue-500 bg-blue-50 text-blue-600 ring-2 ring-blue-200' : ''">
                     {{ g.name }}
-                    <span v-if="myGroupIndex === idx" class="block text-xs font-normal text-blue-400">(上次選擇)</span>
                 </button>
             </div>
             
@@ -414,11 +413,14 @@
                         db = getFirestore(app);
                         dbConnected.value = true;
 
+                        // V3.1 絕殺：強制清除記憶，防止自動登入
+                        localStorage.removeItem('yixinGroup'); 
+                        // 我們也不再自動連線 session，只幫忙填代碼
                         const savedSession = localStorage.getItem('yixinSession');
                         if (savedSession) {
                             sessionCodeInput.value = savedSession;
                         }
-                        // 確保所有狀態歸零
+                        
                         view.value = 'welcome';
                         myGroupIndex.value = null;
 
@@ -438,11 +440,10 @@
                             if(!remoteData.groups) remoteData.groups = JSON.parse(JSON.stringify(defaultGroups));
                             sessionData.value = remoteData;
                             
-                            // 學生連線成功後，檢查是否有選組。沒有就停留在選組大廳。
+                            // 學生連線後，如果還沒選組，強制停在 lobby
                             if(view.value.startsWith('student') && myGroupIndex.value === null) {
                                 view.value = 'student-lobby';
-                            } 
-                            
+                            }
                         } else {
                             if (view.value.startsWith('student')) {
                                 alert("房間找不到或已被關閉");
@@ -473,7 +474,6 @@
                             
                             connectToSession(formattedCode);
                             view.value = 'teacher';
-                            localStorage.setItem('yixinSession', formattedCode); 
                         } catch(e) {
                             alert("建立房間失敗: " + e.message);
                         } finally {
@@ -497,8 +497,10 @@
 
                         if (docSnap.exists()) {
                             sessionCode.value = formattedCode;
+                            // 學生登入絕殺：強制歸零組別，確保不會跳過 lobby
+                            myGroupIndex.value = null;
+                            
                             connectToSession(formattedCode);
-                            // 學生連線成功後，強制進入選組大廳
                             view.value = 'student-lobby';
                             localStorage.setItem('yixinSession', formattedCode);
                         } else {
@@ -512,10 +514,9 @@
                 };
 
                 const confirmGroupSelection = (idx) => {
-                    // 修正：點擊後，更新 myGroupIndex，並切換到遊戲畫面
                     myGroupIndex.value = idx;
                     view.value = 'student-game';
-                    localStorage.setItem('yixinGroup', idx);
+                    // 為了安全，我們不再存這個到 localStorage，避免下次登入又自動跳轉
                     nextTick(updateStudentChart);
                 };
 
