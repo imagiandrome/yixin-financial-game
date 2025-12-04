@@ -117,8 +117,10 @@
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
                 <button v-for="(g, idx) in sessionData.groups" :key="idx" 
                     @click="confirmGroupSelection(idx)"
-                    class="p-4 rounded-xl border-2 hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600 transition text-lg font-bold text-slate-600 border-slate-200 shadow-sm bg-white">
+                    class="p-4 rounded-xl border-2 hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600 transition text-lg font-bold text-slate-600 border-slate-200 shadow-sm bg-white"
+                    :class="myGroupIndex === idx ? 'border-blue-500 bg-blue-50 text-blue-600 ring-2 ring-blue-200' : ''">
                     {{ g.name }}
+                    <span v-if="myGroupIndex === idx" class="block text-xs font-normal text-blue-400">(上次選擇)</span>
                 </button>
             </div>
             
@@ -182,6 +184,7 @@
                     <div class="md:col-span-1 bg-white p-6 rounded-xl shadow-sm">
                         <h3 class="font-bold mb-4">即時資產排行</h3>
                         
+                        <!-- 老師端顯示最新事件 -->
                         <div v-if="sessionData.lastDrawnCard" class="mb-4 p-4 bg-indigo-600 text-white rounded-xl shadow-md text-center animate-pulse">
                             <div class="text-xs opacity-75 mb-1"><i class="fa-solid fa-bolt"></i> 最新市場事件</div>
                             <div class="text-xl font-bold">{{ sessionData.lastDrawnCard }}</div>
@@ -411,7 +414,6 @@
                         db = getFirestore(app);
                         dbConnected.value = true;
 
-                        // v3.0 修正：只幫忙填代碼，絕對不自動連線
                         const savedSession = localStorage.getItem('yixinSession');
                         if (savedSession) {
                             sessionCodeInput.value = savedSession;
@@ -432,13 +434,12 @@
                     const docRef = doc(db, "sessions", code);
                     unsubscribe = onSnapshot(docRef, (docSnap) => {
                         if (docSnap.exists()) {
-                            // 重要：合併資料以確保 groups 存在
                             const remoteData = docSnap.data();
                             if(!remoteData.groups) remoteData.groups = JSON.parse(JSON.stringify(defaultGroups));
                             sessionData.value = remoteData;
                         } else {
                             if (view.value.startsWith('student')) {
-                                alert("房間不存在，請確認代碼");
+                                alert("房間找不到或已被關閉");
                                 logout();
                             }
                         }
@@ -459,7 +460,6 @@
 
                         try {
                             const docRef = doc(db, "sessions", formattedCode);
-                            // 檢查是否已存在，不存在才建立 (防止老師誤按重置)
                             const docSnap = await getDoc(docRef);
                             if (!docSnap.exists()) {
                                 await setDoc(docRef, sessionData.value);
@@ -467,6 +467,8 @@
                             
                             connectToSession(formattedCode);
                             view.value = 'teacher';
+                            // 老師登入也存代碼
+                            localStorage.setItem('yixinSession', formattedCode); 
                         } catch(e) {
                             alert("建立房間失敗: " + e.message);
                         } finally {
@@ -506,12 +508,13 @@
                 const confirmGroupSelection = (idx) => {
                     myGroupIndex.value = idx;
                     view.value = 'student-game';
-                    // 重新觸發圖表更新
+                    localStorage.setItem('yixinGroup', idx);
                     nextTick(updateStudentChart);
                 };
 
                 const logout = () => {
                     localStorage.removeItem('yixinSession');
+                    localStorage.removeItem('yixinGroup'); // 退出/換房時，清除組別記憶
                     view.value = 'welcome';
                     sessionCodeInput.value = '';
                     sessionCode.value = '';
@@ -610,16 +613,14 @@
                 };
                 const getColorClass = (key) => `accent-${{food:'10B981', transport:'3B82F6', entertainment:'F59E0B', education:'8B5CF6', family:'EF4444'}[key]}`;
 
-                // 修復：學生圖表邏輯
+                // 圖表邏輯
                 let studentChartInstance = null;
                 const updateStudentChart = () => {
-                    // 只有在學生遊戲介面且為第一階段才更新圖表
                     if (view.value !== 'student-game' || sessionData.value.stage !== 1) return;
                     
                     const ctx = document.getElementById('studentPieChart');
                     if (!ctx) return;
 
-                    // 獲取最新數據
                     const dataValues = Object.keys(myGroup.value.budget).map(k => myGroup.value.budget[k]);
                     const bgColors = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EF4444'];
 
@@ -637,16 +638,6 @@
                         });
                     }
                 };
-
-                // 監聽學生資料變動，即時更新圓餅圖
-                watch(myGroup, updateStudentChart, { deep: true });
-
-                // 當切換到學生遊戲介面時，確保圖表初始化
-                watch(view, (newVal) => {
-                    if (newVal === 'student-game') {
-                        nextTick(updateStudentChart);
-                    }
-                });
 
                 let teacherAssetChartInstance = null;
                 let teacherLineChartInstance = null;
@@ -724,7 +715,6 @@
                     }
                 };
 
-                // Watchers
                 watch(() => sessionData.value, () => {
                     nextTick(updateCharts);
                 }, { deep: true });
