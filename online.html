@@ -59,7 +59,7 @@
                     <span class="hidden md:inline">一新中學理財工作坊</span>
                     <div class="flex items-center ml-4 text-xs font-normal">
                         <span class="status-dot" :class="dbConnected ? 'status-online' : 'status-offline'"></span>
-                        {{ dbConnected ? '已連線 (Ready)' : '連線中 (Connecting...)' }}
+                        {{ dbConnected ? '已連線' : '連線中...' }}
                     </div>
                 </div>
                 <div class="space-x-2 text-sm">
@@ -75,31 +75,27 @@
             <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
                 <!-- 遊戲代碼輸入 -->
                 <div class="mb-6">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">請輸入遊戲代碼 (由老師提供)</label>
-                    <input type="text" v-model.trim="sessionCode" placeholder="例如: class101" 
+                    <label class="block text-sm font-bold text-gray-700 mb-2">設定或輸入遊戲代碼</label>
+                    <input type="text" v-model.trim="sessionCode" placeholder="例如: class101 (自訂英文數字)" 
                         class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none text-xl font-mono text-center uppercase">
                     <p class="text-xs text-gray-500 mt-2 text-center">
                         <i class="fa-solid fa-circle-info mr-1"></i>
-                        老師：輸入代碼建立房間 (需密碼)。<br>
-                        學生：輸入代碼加入遊戲。
+                        老師：請在此輸入您想設定的代碼 (如 Today01)，系統會自動建立房間。<br>
+                        學生：請輸入老師告知的代碼。
                     </p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <button @click="handleTeacherLogin" :disabled="!sessionCode || !dbConnected"
+                    <button @click="handleTeacherLogin" :disabled="!sessionCode"
                         class="p-4 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-chalkboard-user block text-2xl mb-2"></i>
-                        我是老師
+                        我是老師<br><span class="text-xs font-normal opacity-70">(需密碼)</span>
                     </button>
-                    <button @click="handleStudentLogin" :disabled="!sessionCode || !dbConnected"
+                    <button @click="handleStudentLogin" :disabled="!sessionCode"
                         class="p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-users block text-2xl mb-2"></i>
-                        我是學生
+                        我是學生<br><span class="text-xs font-normal opacity-70">(加入遊戲)</span>
                     </button>
-                </div>
-                
-                <div v-if="!dbConnected" class="mt-4 p-3 bg-yellow-50 text-yellow-800 text-xs rounded text-center">
-                    <i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在嘗試連線 Firebase...<br>若太久沒反應，請檢查網路或重新整理。
                 </div>
             </div>
         </div>
@@ -305,6 +301,9 @@
         import { getFirestore, doc, setDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+        // ============================================================
+        // ⚠️ 已填入您的 Config
+        // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyBl_7bBubA98S9RYSO_wR4PQdPiN9DT_aU",
             authDomain: "yixin-monopoly-game.firebaseapp.com",
@@ -317,6 +316,7 @@
 
         const { createApp, ref, computed, watch, nextTick, onMounted } = Vue;
 
+        // 初始資料結構
         const INCOME = 20000;
         const INITIAL_CAPITAL = 100000;
         
@@ -341,14 +341,17 @@
 
         createApp({
             setup() {
+                // Firebase 實例
                 let db = null;
                 let unsubscribe = null;
 
-                const view = ref('welcome');
+                // 狀態
+                const view = ref('welcome'); // welcome, teacher, student
                 const sessionCode = ref('');
                 const dbConnected = ref(false);
-                const myGroupIndex = ref(0);
+                const myGroupIndex = ref(0); // 學生當前選擇的組別 (0-12)
                 
+                // 整個遊戲的資料 (會與 Firebase 同步)
                 const sessionData = ref({
                     stage: 1,
                     inflationTriggered: false,
@@ -358,67 +361,77 @@
                     lastDrawnCard: null
                 });
 
+                // --- 初始化 Firebase ---
                 onMounted(async () => {
                     try {
                         const app = initializeApp(firebaseConfig);
                         const auth = getAuth(app);
                         
+                        // 嘗試匿名登入，若失敗則跳過（讓測試模式可用）
                         try {
                             await signInAnonymously(auth);
                         } catch (err) {
-                            console.warn("Auth skipped:", err);
+                            console.warn("Auth skipped or failed:", err);
                         }
 
                         db = getFirestore(app);
                         dbConnected.value = true;
-                        console.log("Firebase Connected");
+                        console.log("Firebase 連線成功");
                     } catch (e) {
-                        console.error("Firebase Failed", e);
-                        alert("Firebase 連線失敗：\n" + e.message);
+                        console.error("Firebase 連線失敗", e);
+                        alert("連線失敗，請檢查 Config");
                     }
                 });
 
+                // --- 連線到特定房間 (訂閱資料) ---
                 const connectToSession = (code) => {
                     if (!db) return;
+                    // 取消舊的訂閱
                     if (unsubscribe) unsubscribe();
                     
                     const docRef = doc(db, "sessions", code);
-                    
+                    // 監聽變動 (Real-time Listener)
                     unsubscribe = onSnapshot(docRef, (docSnap) => {
                         if (docSnap.exists()) {
                             sessionData.value = docSnap.data();
+                            // 教師端若在階段3，更新圖表
                             if (view.value === 'teacher' && sessionData.value.stage === 3) {
                                 nextTick(initTeacherCharts);
                             }
                         } else {
+                            // 若房間不存在，如果是學生則提示
                             if (view.value === 'student') {
-                                alert("找不到此房間，請確認代碼。\n(老師必須先登入建立房間)");
+                                alert("找不到此房間，請確認代碼");
                                 view.value = 'welcome';
                             }
                         }
                     }, (error) => {
-                        console.error("Snapshot Error:", error);
-                        // 關鍵：捕捉權限錯誤
+                        // 處理權限錯誤 (最重要的錯誤訊息)
                         if (error.code === 'permission-denied') {
-                            alert("權限不足！\n請檢查 Firestore Rules 是否設為 Test Mode。\n(Permission Denied)");
+                            alert("錯誤：權限不足！\n請去 Firebase 後台將 Rules 改為 'if true;'");
                         } else {
-                            alert("連線中斷: " + error.message);
+                            console.error(error);
                         }
                     });
                 };
 
+                // --- 身份處理 ---
                 const handleTeacherLogin = async () => {
-                    let pwd = prompt("請輸入老師密碼 (預設: yixin2025)：");
+                    let pwd = prompt("請輸入老師密碼 (yixin2025)：");
                     if (!pwd) return; 
-                    pwd = pwd.trim().toLowerCase(); 
+                    pwd = pwd.trim().toLowerCase(); // 防呆處理
 
                     if (pwd === "yixin2025") {
                         if (!sessionCode.value) return alert("請輸入房間代碼");
-                        if (!db) return alert("資料庫未連線");
+                        
+                        // 確認資料庫狀態
+                        if (!db) return alert("資料庫尚未連線，請重新整理頁面");
 
                         try {
+                            // 嘗試建立房間 (若不存在)
                             const docRef = doc(db, "sessions", sessionCode.value);
-                            await setDoc(docRef, sessionData.value, { merge: true }); 
+                            // 初始化資料 (預設)
+                            await setDoc(docRef, sessionData.value, { merge: true }); // merge 避免覆蓋正在進行的遊戲
                             
                             connectToSession(sessionCode.value);
                             view.value = 'teacher';
@@ -441,17 +454,17 @@
                     view.value = 'student';
                 };
 
+                // --- 學生操作：上傳資料 ---
                 const saveMyGroupData = async () => {
                     if (!db || !sessionCode.value) return;
+                    // 更新自己這組的資料
                     const docRef = doc(db, "sessions", sessionCode.value);
-                    const groupPath = `groups.${myGroupIndex.value}`; 
-                    try {
-                        await updateDoc(docRef, {
-                            [groupPath]: sessionData.value.groups[myGroupIndex.value]
-                        });
-                    } catch(e) {
-                        console.error("Save Error:", e);
-                    }
+                    const groupPath = `groups.${myGroupIndex.value}`; // Firestore 路徑語法
+                    
+                    // 建立更新物件
+                    await updateDoc(docRef, {
+                        [groupPath]: sessionData.value.groups[myGroupIndex.value]
+                    });
                 };
                 
                 const setRisk = (profile) => {
@@ -459,6 +472,7 @@
                     saveMyGroupData();
                 };
 
+                // --- 老師操作 ---
                 const updateStage = async (s) => {
                     const docRef = doc(db, "sessions", sessionCode.value);
                     await updateDoc(docRef, { stage: s });
@@ -470,6 +484,7 @@
                 };
 
                 const drawFateCard = async () => {
+                    // 計算還沒抽過的卡
                     const availableIndices = FATE_CARDS.map((_, i) => i).filter(i => !sessionData.value.drawnCardIndices.includes(i));
                     
                     if (availableIndices.length === 0) return alert("卡牌已用盡");
@@ -478,6 +493,7 @@
                     const cardIndex = availableIndices[randomIndex];
                     const card = FATE_CARDS[cardIndex];
 
+                    // 在後端計算所有組的新資產 (這是後端邏輯，確保統一)
                     const newGroups = sessionData.value.groups.map(g => {
                         const newInv = {
                             savings: g.investment.savings * card.effect.savings,
@@ -518,6 +534,7 @@
                     }
                 };
 
+                // --- 計算邏輯 (與單機版相同) ---
                 const myGroup = computed(() => sessionData.value.groups[myGroupIndex.value]);
                 
                 const calculateTotalExpense = (g) => {
@@ -537,6 +554,7 @@
 
                 const isCardDeckEmpty = computed(() => sessionData.value.drawnCardIndices.length >= FATE_CARDS.length);
 
+                // --- 輔助 ---
                 const formatMoney = (val) => new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 }).format(val);
                 const translate = (key) => {
                     const map = { food: '食物', transport: '交通', entertainment: '娛樂', education: '學習', family: '家庭', savings: '定存', etf: 'ETF', stocks: '股票', entrepreneurship: '創業' };
@@ -544,36 +562,44 @@
                 };
                 const getColorClass = (key) => `accent-${{food:'10B981', transport:'3B82F6', entertainment:'F59E0B', education:'8B5CF6', family:'EF4444'}[key]}`;
 
+                // --- 圖表 (簡化版) ---
                 let chartInstance = null;
                 const initTeacherCharts = () => {
                     const ctx = document.getElementById('teacherChart');
                     if (!ctx) return;
                     if (chartInstance) chartInstance.destroy();
 
+                    // 只取前三與後三
                     const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
                     const top3 = sorted.slice(0, 3);
                     const bottom3 = sorted.slice(-3);
-                    const targets = [...new Set([...top3, ...bottom3])]; 
+                    const targets = [...new Set([...top3, ...bottom3])]; // 去重
 
                     const years = Array.from({length: 21}, (_, i) => `${i}年`);
                     const datasets = targets.map(g => {
+                        // 這裡使用簡化版的模擬運算 (與單機版類似)
+                        // 為了讓連線版順暢，我們直接模擬未來
                         const total = g.totalAssets || 1;
                         const inv = g.investment;
+                        // 加權報酬率
                         const rate = 1 + ((inv.savings*0.02 + inv.etf*0.06 + inv.stocks*0.08 + inv.entrepreneurship*0.12) / total);
                         
+                        // 風險判定
                         const isHighRisk = (inv.entrepreneurship / total) > 0.3;
-                        const willFail = isHighRisk && ((g.id * 7) % 10 < 3); 
+                        // 使用 Group ID 當種子來決定是否失敗 (保持一致性)
+                        const willFail = isHighRisk && ((g.id * 7) % 10 < 3); // 30% 機率
 
                         let data = [];
                         let current = g.totalAssets;
                         for(let y=0; y<=20; y++) {
                             data.push(current);
-                            if (willFail && y >= 9) current *= 0.98; 
+                            if (willFail && y >= 9) current *= 0.98; // 失敗後縮水
                             else current *= rate;
                         }
 
+                        // 顏色判斷
                         const rank = sorted.findIndex(sg => sg.id === g.id);
-                        const color = rank < 3 ? '#10B981' : '#EF4444'; 
+                        const color = rank < 3 ? '#10B981' : '#EF4444'; // 綠 vs 紅
 
                         return {
                             label: g.name + (willFail ? ' (風險)' : ''),
