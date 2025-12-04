@@ -69,18 +69,18 @@
             
             <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
                 <div class="mb-6">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">請輸入遊戲代碼 (由老師提供)</label>
-                    <input type="text" v-model.trim="sessionCode" placeholder="例如: class101" 
+                    <label class="block text-sm font-bold text-gray-700 mb-2">請輸入遊戲代碼 (英文自動大寫)</label>
+                    <input type="text" v-model="sessionCodeInput" placeholder="例如: CLASS101" 
                         class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none text-xl font-mono text-center uppercase">
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <button @click="handleTeacherLogin" :disabled="!sessionCode"
+                    <button @click="handleTeacherLogin" :disabled="!sessionCodeInput"
                         class="p-4 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-chalkboard-user block text-2xl mb-2"></i>
                         我是老師
                     </button>
-                    <button @click="handleStudentLogin" :disabled="!sessionCode"
+                    <button @click="handleStudentLogin" :disabled="!sessionCodeInput"
                         class="p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-users block text-2xl mb-2"></i>
                         我是學生
@@ -89,7 +89,7 @@
             </div>
         </div>
 
-        <!-- 2. 學生選組大廳 (新功能：防止預設第1組) -->
+        <!-- 2. 學生選組大廳 -->
         <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh]">
             <h2 class="text-2xl font-bold mb-6 text-center">請選擇你的組別</h2>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
@@ -128,9 +128,11 @@
                     {{ sessionData.inflationTriggered ? '取消通膨' : '觸發通膨' }}
                 </button>
 
-                <button v-if="sessionData.stage === 2" @click="drawFateCard" 
-                    class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center bg-indigo-600 text-white hover:bg-indigo-700">
-                    <i class="fa-solid fa-dice mr-2"></i> 抽取命運卡
+                <button v-if="sessionData.stage === 2" @click="drawFateCard" :disabled="isCardDeckEmpty"
+                    :class="isCardDeckEmpty ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
+                    class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center text-white">
+                    <i class="fa-solid fa-dice mr-2"></i> 
+                    {{ isCardDeckEmpty ? '卡牌已用盡' : `抽取命運卡 (${sessionData.drawnCardIndices.length}/${FATE_CARDS.length})` }}
                 </button>
                 
                 <button @click="resetGame" class="ml-auto px-4 py-2 text-sm text-gray-400 hover:text-red-500 underline">重置數據</button>
@@ -153,10 +155,17 @@
                     </div>
                 </div>
 
-                <!-- 投資排行 (修正：Bar Chart) -->
+                <!-- 投資排行 -->
                 <div v-if="sessionData.stage === 2" class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="md:col-span-1 bg-white p-6 rounded-xl shadow-sm">
                         <h3 class="font-bold mb-4">即時資產排行</h3>
+                        
+                        <!-- 老師端顯示最新事件 -->
+                        <div v-if="sessionData.lastDrawnCard" class="mb-4 p-4 bg-indigo-600 text-white rounded-xl shadow-md text-center animate-pulse">
+                            <div class="text-xs opacity-75 mb-1"><i class="fa-solid fa-bolt"></i> 最新市場事件</div>
+                            <div class="text-xl font-bold">{{ sessionData.lastDrawnCard }}</div>
+                        </div>
+
                         <div class="space-y-2 max-h-[400px] overflow-y-auto">
                             <div v-for="(g, idx) in sortedGroups" :key="idx" class="flex justify-between items-center p-2 bg-slate-50 rounded">
                                 <div class="flex items-center">
@@ -266,7 +275,7 @@
                 <div v-if="sessionData.lastDrawnCard" class="mt-4 p-4 bg-indigo-600 text-white rounded-xl shadow-lg text-center animate-bounce">
                     <p class="text-xs opacity-75">市場快訊</p>
                     <p class="text-lg font-bold">{{ sessionData.lastDrawnCard }}</p>
-                    <p class="text-sm mt-1">資產已更新！</p>
+                    <p class="text-sm mt-1">資產已自動更新！</p>
                 </div>
             </div>
 
@@ -285,7 +294,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // 您的 Firebase Config
@@ -329,9 +338,10 @@
                 let unsubscribe = null;
 
                 const view = ref('welcome'); 
-                const sessionCode = ref('');
+                const sessionCodeInput = ref(''); // 這是使用者輸入的
+                const sessionCode = ref(''); // 這是確認後的代碼
                 const dbConnected = ref(false);
-                const myGroupIndex = ref(null); // 改為 null 強制選擇
+                const myGroupIndex = ref(null); 
                 
                 const sessionData = ref({
                     stage: 1,
@@ -366,7 +376,7 @@
                             sessionData.value = docSnap.data();
                         } else {
                             if (view.value.startsWith('student')) {
-                                alert("房間不存在");
+                                alert("房間不存在，請確認代碼是否正確");
                                 view.value = 'welcome';
                             }
                         }
@@ -378,14 +388,20 @@
                 const handleTeacherLogin = async () => {
                     let pwd = prompt("請輸入老師密碼：");
                     if (pwd && pwd.trim().toLowerCase() === "yixin2025") {
-                        if (!sessionCode.value) return alert("請輸入代碼");
-                        if (!db) return alert("連線中...");
+                        if (!sessionCodeInput.value) return alert("請輸入代碼");
+                        
+                        const formattedCode = sessionCodeInput.value.trim().toUpperCase(); // 強制轉大寫
+                        sessionCode.value = formattedCode;
 
                         try {
-                            const docRef = doc(db, "sessions", sessionCode.value);
-                            // 老師登入時，若房間不存在則建立；若存在則合併 (不覆蓋現有進度)
-                            await setDoc(docRef, sessionData.value, { merge: true }); 
-                            connectToSession(sessionCode.value);
+                            const docRef = doc(db, "sessions", formattedCode);
+                            // 檢查是否已存在，不存在才建立 (防止老師誤按重置)
+                            const docSnap = await getDoc(docRef);
+                            if (!docSnap.exists()) {
+                                await setDoc(docRef, sessionData.value);
+                            }
+                            
+                            connectToSession(formattedCode);
                             view.value = 'teacher';
                         } catch(e) {
                             alert("建立房間失敗: " + e.message);
@@ -396,14 +412,17 @@
                 };
 
                 const handleStudentLogin = () => {
-                    if (!sessionCode.value) return alert("請輸入代碼");
-                    connectToSession(sessionCode.value);
-                    view.value = 'student-lobby'; // 進入選組大廳
+                    if (!sessionCodeInput.value) return alert("請輸入代碼");
+                    const formattedCode = sessionCodeInput.value.trim().toUpperCase(); // 強制轉大寫
+                    sessionCode.value = formattedCode;
+                    
+                    connectToSession(formattedCode);
+                    view.value = 'student-lobby';
                 };
 
                 const confirmGroupSelection = (idx) => {
                     myGroupIndex.value = idx;
-                    view.value = 'student-game'; // 進入遊戲
+                    view.value = 'student-game';
                 };
 
                 // 儲存邏輯 (使用 @change 觸發，減少寫入量)
@@ -571,7 +590,7 @@
 
                             teacherLineChartInstance = new Chart(ctx, {
                                 type: 'line',
-                                data: { labels: years, datasets: datasets },
+                                data: { labels: years, datasets: chartDatasets },
                                 options: { responsive: true, maintainAspectRatio: false }
                             });
                         }
@@ -588,7 +607,7 @@
                 });
 
                 return {
-                    view, sessionCode, dbConnected,
+                    view, sessionCodeInput, sessionCode, dbConnected,
                     sessionData, myGroupIndex, myGroup,
                     handleTeacherLogin, handleStudentLogin, confirmGroupSelection,
                     updateStage, toggleInflation, drawFateCard, resetGame,
