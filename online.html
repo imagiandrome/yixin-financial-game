@@ -75,28 +75,27 @@
             <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
                 <!-- 遊戲代碼輸入 -->
                 <div class="mb-6">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">設定或輸入遊戲代碼</label>
-                    <input type="text" v-model.trim="sessionCode" placeholder="例如: class101 (自訂英文數字)" 
+                    <label class="block text-sm font-bold text-gray-700 mb-2">請輸入遊戲代碼 (由老師提供)</label>
+                    <input type="text" v-model.trim="sessionCode" placeholder="例如: classA" 
                         class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none text-xl font-mono text-center uppercase">
-                    <p class="text-xs text-gray-500 mt-2 text-center">
-                        <i class="fa-solid fa-circle-info mr-1"></i>
-                        老師：請在此輸入您想設定的代碼 (如 Today01)，系統會自動建立房間。<br>
-                        學生：請輸入老師告知的代碼。
-                    </p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <button @click="handleTeacherLogin" :disabled="!sessionCode"
                         class="p-4 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-chalkboard-user block text-2xl mb-2"></i>
-                        我是老師<br><span class="text-xs font-normal opacity-70">(需密碼)</span>
+                        我是老師
                     </button>
                     <button @click="handleStudentLogin" :disabled="!sessionCode"
                         class="p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-users block text-2xl mb-2"></i>
-                        我是學生<br><span class="text-xs font-normal opacity-70">(加入遊戲)</span>
+                        我是學生
                     </button>
                 </div>
+                
+                <p class="text-center text-xs text-gray-400 mt-4">
+                    老師需輸入密碼建立房間，學生可直接加入。
+                </p>
             </div>
         </div>
 
