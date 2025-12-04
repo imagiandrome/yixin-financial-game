@@ -18,6 +18,7 @@
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: #f8fafc; }
         .transition-all { transition: all 0.3s ease; }
         
+        /* 滑桿樣式優化 */
         input[type=range] { 
             -webkit-appearance: none; background: transparent; cursor: pointer; position: relative; z-index: 20; height: 30px; margin: 10px 0;
         }
@@ -69,8 +70,9 @@
             
             <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
                 <div class="mb-6">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">請輸入遊戲代碼 (英文自動大寫)</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">請輸入遊戲代碼 (自動大寫/去空白)</label>
                     <input type="text" v-model="sessionCodeInput" placeholder="例如: CLASS101" 
+                        @input="cleanInput"
                         class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none text-xl font-mono text-center uppercase">
                 </div>
 
@@ -203,8 +205,11 @@
                     <div class="text-xs text-slate-500">我是: <span class="font-bold text-slate-800">{{ myGroup.name }}</span></div>
                     <div class="text-xs text-slate-400">房間: {{ sessionCode }}</div>
                 </div>
-                <div class="text-xs font-bold" :class="dbConnected ? 'text-green-500' : 'text-red-500'">
-                    {{ dbConnected ? '● 連線中' : '● 斷線' }}
+                <div class="flex items-center">
+                    <div class="text-xs font-bold mr-3" :class="dbConnected ? 'text-green-500' : 'text-red-500'">
+                        {{ dbConnected ? '● 連線中' : '● 斷線' }}
+                    </div>
+                    <button @click="view = 'student-lobby'" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-slate-600">換組</button>
                 </div>
             </div>
 
@@ -224,6 +229,19 @@
                     </div>
                 </div>
 
+                <!-- 圓餅圖容器 (已修復) -->
+                <div class="h-48 relative flex justify-center">
+                    <canvas id="studentPieChart"></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none mt-4">
+                        <span class="font-bold text-sm" :class="myBalance < 0 ? 'text-rose-500' : 'text-slate-600'">
+                            {{ myBalance < 0 ? '透支' : '剩餘' }}
+                        </span>
+                        <span class="font-mono font-bold text-lg" :class="myBalance < 0 ? 'text-rose-500' : 'text-slate-500'">
+                            {{ formatMoney(Math.abs(myBalance)) }}
+                        </span>
+                    </div>
+                </div>
+
                 <div class="space-y-6">
                     <div v-for="(val, key) in myGroup.budget" :key="key">
                         <div class="flex justify-between text-sm mb-2">
@@ -232,8 +250,10 @@
                             </span>
                             <span class="font-mono text-slate-500">{{ formatMoney(calculateExpenseItem(val)) }}</span>
                         </div>
+                        <!-- 修復：加入 updateStudentChart 呼叫 -->
                         <input type="range" min="0" max="10000" step="500" 
                             v-model.number="myGroup.budget[key]" 
+                            @input="updateStudentChart"
                             @change="saveMyGroupData"
                             class="w-full h-2 rounded-lg" :class="getColorClass(key)">
                     </div>
@@ -340,12 +360,12 @@
                 let unsubscribe = null;
 
                 const view = ref('welcome'); 
-                const sessionCodeInput = ref(''); // 這是使用者輸入的
-                const sessionCode = ref(''); // 這是確認後的代碼
+                const sessionCodeInput = ref(''); 
+                const sessionCode = ref('');
                 const dbConnected = ref(false);
                 const myGroupIndex = ref(null); 
-                const isProcessing = ref(false); // 處理中狀態，防止重複點擊
-                const userType = ref(''); // teacher or student
+                const isProcessing = ref(false);
+                const userType = ref('');
                 
                 const sessionData = ref({
                     stage: 1,
@@ -356,7 +376,11 @@
                     lastDrawnCard: null
                 });
 
-                // 初始化 Firebase
+                // 強制輸入轉大寫且去空白
+                const cleanInput = () => {
+                    sessionCodeInput.value = sessionCodeInput.value.toUpperCase().replace(/\s/g, '');
+                };
+
                 onMounted(async () => {
                     try {
                         const app = initializeApp(firebaseConfig);
@@ -369,7 +393,6 @@
                     }
                 });
 
-                // 監聽房間數據
                 const connectToSession = (code) => {
                     if (!db) return;
                     if (unsubscribe) unsubscribe();
@@ -380,8 +403,8 @@
                             sessionData.value = docSnap.data();
                         } else {
                             if (view.value.startsWith('student')) {
-                                alert("房間已被關閉或不存在，請確認代碼");
-                                view.value = 'welcome';
+                                alert("房間找不到或已被關閉");
+                                logout();
                             }
                         }
                     }, (error) => {
@@ -396,14 +419,12 @@
                         
                         const formattedCode = sessionCodeInput.value.trim().toUpperCase(); 
                         sessionCode.value = formattedCode;
-                        
                         isProcessing.value = true;
                         userType.value = 'teacher';
 
                         try {
                             const docRef = doc(db, "sessions", formattedCode);
                             const docSnap = await getDoc(docRef);
-                            // 只在房間不存在時建立，避免覆蓋
                             if (!docSnap.exists()) {
                                 await setDoc(docRef, sessionData.value);
                             }
@@ -436,7 +457,7 @@
                             connectToSession(formattedCode);
                             view.value = 'student-lobby';
                         } else {
-                            alert(`找不到房間「${formattedCode}」\n請確認老師已建立房間。`);
+                            alert(`找不到房間「${formattedCode}」\n請確認老師已建立。`);
                         }
                     } catch(e) {
                         alert("連線錯誤: " + e.message);
@@ -450,7 +471,14 @@
                     view.value = 'student-game';
                 };
 
-                // 儲存邏輯 (使用 @change 觸發，減少寫入量)
+                const logout = () => {
+                    view.value = 'welcome';
+                    sessionCodeInput.value = '';
+                    sessionCode.value = '';
+                    myGroupIndex.value = null;
+                    if (unsubscribe) unsubscribe();
+                };
+
                 const saveMyGroupData = async () => {
                     if (!db || !sessionCode.value || myGroupIndex.value === null) return;
                     const docRef = doc(db, "sessions", sessionCode.value);
@@ -465,7 +493,6 @@
                     saveMyGroupData();
                 };
 
-                // 老師控制邏輯
                 const updateStage = async (s) => {
                     const docRef = doc(db, "sessions", sessionCode.value);
                     await updateDoc(docRef, { stage: s });
@@ -483,7 +510,6 @@
                     const idx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
                     const card = FATE_CARDS[idx];
 
-                    // 後端計算所有組的新資產
                     const newGroups = sessionData.value.groups.map(g => {
                         const newInv = {
                             savings: g.investment.savings * card.effect.savings,
@@ -515,7 +541,6 @@
                     }
                 };
 
-                // 計算邏輯
                 const myGroup = computed(() => myGroupIndex.value !== null ? sessionData.value.groups[myGroupIndex.value] : defaultGroups[0]);
                 
                 const calculateTotalExpense = (g) => {
@@ -545,7 +570,44 @@
                 };
                 const getColorClass = (key) => `accent-${{food:'10B981', transport:'3B82F6', entertainment:'F59E0B', education:'8B5CF6', family:'EF4444'}[key]}`;
 
-                // 圖表邏輯 (Watch sessionData to update charts)
+                // 修復：學生圖表邏輯
+                let studentChartInstance = null;
+                const updateStudentChart = () => {
+                    // 只有在學生遊戲介面且為第一階段才更新圖表
+                    if (view.value !== 'student-game' || sessionData.value.stage !== 1) return;
+                    
+                    const ctx = document.getElementById('studentPieChart');
+                    if (!ctx) return;
+
+                    // 獲取最新數據
+                    const dataValues = Object.keys(myGroup.value.budget).map(k => myGroup.value.budget[k]);
+                    const bgColors = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EF4444'];
+
+                    if (studentChartInstance) {
+                        studentChartInstance.data.datasets[0].data = dataValues;
+                        studentChartInstance.update();
+                    } else {
+                        studentChartInstance = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: Object.keys(myGroup.value.budget).map(k => translate(k)),
+                                datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 0 }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+                        });
+                    }
+                };
+
+                // 監聽學生資料變動，即時更新圓餅圖
+                watch(myGroup, updateStudentChart, { deep: true });
+
+                // 當切換到學生遊戲介面時，確保圖表初始化
+                watch(view, (newVal) => {
+                    if (newVal === 'student-game') {
+                        nextTick(updateStudentChart);
+                    }
+                });
+
                 let teacherAssetChartInstance = null;
                 let teacherLineChartInstance = null;
 
@@ -615,14 +677,13 @@
 
                             teacherLineChartInstance = new Chart(ctx, {
                                 type: 'line',
-                                data: { labels: years, datasets: chartDatasets },
+                                data: { labels: years, datasets: datasets },
                                 options: { responsive: true, maintainAspectRatio: false }
                             });
                         }
                     }
                 };
 
-                // Watchers
                 watch(() => sessionData.value, () => {
                     nextTick(updateCharts);
                 }, { deep: true });
@@ -634,9 +695,9 @@
                 return {
                     view, sessionCodeInput, sessionCode, dbConnected,
                     sessionData, myGroupIndex, myGroup, isProcessing, userType,
-                    handleTeacherLogin, handleStudentLogin, confirmGroupSelection,
+                    handleTeacherLogin, handleStudentLogin, confirmGroupSelection, logout, cleanInput,
                     updateStage, toggleInflation, drawFateCard, resetGame,
-                    saveMyGroupData, setRisk,
+                    saveMyGroupData, setRisk, updateStudentChart,
                     calculateTotalExpense, calculateBalance, calculateExpenseItem,
                     myBalance, investmentRemaining, formatMoney, translate, getColorClass, getIcon,
                     sortedGroups, isCardDeckEmpty,
