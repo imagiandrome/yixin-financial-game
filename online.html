@@ -75,15 +75,17 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <button @click="handleTeacherLogin" :disabled="!sessionCodeInput"
+                    <button @click="handleTeacherLogin" :disabled="!sessionCodeInput || isProcessing"
                         class="p-4 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-chalkboard-user block text-2xl mb-2"></i>
                         我是老師
+                        <span v-if="isProcessing && userType==='teacher'" class="block text-xs mt-1"><i class="fa-solid fa-spinner fa-spin"></i> 建立中...</span>
                     </button>
-                    <button @click="handleStudentLogin" :disabled="!sessionCodeInput"
+                    <button @click="handleStudentLogin" :disabled="!sessionCodeInput || isProcessing"
                         class="p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-users block text-2xl mb-2"></i>
                         我是學生
+                        <span v-if="isProcessing && userType==='student'" class="block text-xs mt-1"><i class="fa-solid fa-spinner fa-spin"></i> 搜尋中...</span>
                     </button>
                 </div>
             </div>
@@ -342,6 +344,8 @@
                 const sessionCode = ref(''); // 這是確認後的代碼
                 const dbConnected = ref(false);
                 const myGroupIndex = ref(null); 
+                const isProcessing = ref(false); // 處理中狀態，防止重複點擊
+                const userType = ref(''); // teacher or student
                 
                 const sessionData = ref({
                     stage: 1,
@@ -376,7 +380,7 @@
                             sessionData.value = docSnap.data();
                         } else {
                             if (view.value.startsWith('student')) {
-                                alert("房間不存在，請確認代碼是否正確");
+                                alert("房間已被關閉或不存在，請確認代碼");
                                 view.value = 'welcome';
                             }
                         }
@@ -390,13 +394,16 @@
                     if (pwd && pwd.trim().toLowerCase() === "yixin2025") {
                         if (!sessionCodeInput.value) return alert("請輸入代碼");
                         
-                        const formattedCode = sessionCodeInput.value.trim().toUpperCase(); // 強制轉大寫
+                        const formattedCode = sessionCodeInput.value.trim().toUpperCase(); 
                         sessionCode.value = formattedCode;
+                        
+                        isProcessing.value = true;
+                        userType.value = 'teacher';
 
                         try {
                             const docRef = doc(db, "sessions", formattedCode);
-                            // 檢查是否已存在，不存在才建立 (防止老師誤按重置)
                             const docSnap = await getDoc(docRef);
+                            // 只在房間不存在時建立，避免覆蓋
                             if (!docSnap.exists()) {
                                 await setDoc(docRef, sessionData.value);
                             }
@@ -405,19 +412,37 @@
                             view.value = 'teacher';
                         } catch(e) {
                             alert("建立房間失敗: " + e.message);
+                        } finally {
+                            isProcessing.value = false;
                         }
                     } else {
                         alert("密碼錯誤");
                     }
                 };
 
-                const handleStudentLogin = () => {
+                const handleStudentLogin = async () => {
                     if (!sessionCodeInput.value) return alert("請輸入代碼");
-                    const formattedCode = sessionCodeInput.value.trim().toUpperCase(); // 強制轉大寫
-                    sessionCode.value = formattedCode;
+                    const formattedCode = sessionCodeInput.value.trim().toUpperCase();
                     
-                    connectToSession(formattedCode);
-                    view.value = 'student-lobby';
+                    isProcessing.value = true;
+                    userType.value = 'student';
+
+                    try {
+                        const docRef = doc(db, "sessions", formattedCode);
+                        const docSnap = await getDoc(docRef);
+
+                        if (docSnap.exists()) {
+                            sessionCode.value = formattedCode;
+                            connectToSession(formattedCode);
+                            view.value = 'student-lobby';
+                        } else {
+                            alert(`找不到房間「${formattedCode}」\n請確認老師已建立房間。`);
+                        }
+                    } catch(e) {
+                        alert("連線錯誤: " + e.message);
+                    } finally {
+                        isProcessing.value = false;
+                    }
                 };
 
                 const confirmGroupSelection = (idx) => {
@@ -608,7 +633,7 @@
 
                 return {
                     view, sessionCodeInput, sessionCode, dbConnected,
-                    sessionData, myGroupIndex, myGroup,
+                    sessionData, myGroupIndex, myGroup, isProcessing, userType,
                     handleTeacherLogin, handleStudentLogin, confirmGroupSelection,
                     updateStage, toggleInflation, drawFateCard, resetGame,
                     saveMyGroupData, setRisk,
