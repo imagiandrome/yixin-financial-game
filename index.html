@@ -98,7 +98,7 @@
                 </div>
                 <div class="space-x-2 text-sm">
                     <button @click="view = 'welcome'" :class="{'text-emerald-400': view==='welcome'}" class="hover:text-emerald-400 transition px-2">首頁</button>
-                    <button @click="view = 'teacher'" :class="{'text-emerald-400': view==='teacher'}" class="hover:text-emerald-400 transition px-2">老師後台</button>
+                    <button @click="openTeacherView" :class="{'text-emerald-400': view==='teacher'}" class="hover:text-emerald-400 transition px-2">老師後台</button>
                     <button @click="view = 'student'" :class="{'text-emerald-400': view==='student'}" class="hover:text-emerald-400 transition px-2">學生介面</button>
                 </div>
             </div>
@@ -114,7 +114,8 @@
                     <p class="text-xl text-slate-500">Yi-Xin Financial Literacy Workshop</p>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-                    <button @click="view = 'teacher'" class="group p-8 bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all border-2 border-transparent hover:border-emerald-400 text-left relative overflow-hidden">
+                    <!-- 老師按鈕 - 觸發密碼輸入 -->
+                    <button @click="openTeacherView" class="group p-8 bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all border-2 border-transparent hover:border-emerald-400 text-left relative overflow-hidden">
                         <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-chalkboard-user text-9xl text-emerald-500"></i></div>
                         <h3 class="text-2xl font-bold mb-2 text-slate-800">我是老師 / 主持人</h3>
                         <p class="text-slate-500">Teacher Dashboard</p>
@@ -522,6 +523,17 @@
                     });
                 };
 
+                const openTeacherView = () => {
+                    const password = prompt("請輸入老師密碼：");
+                    const TEACHER_PASSWORD = 'yixin2025'; // 寫死密碼，方便單頁 HTML 運行
+                    if (password === TEACHER_PASSWORD) {
+                        state.value.view = 'teacher';
+                        nextTick(initTeacherCharts);
+                    } else {
+                        alert("密碼錯誤，無法進入老師後台。");
+                    }
+                };
+
                 const triggerInflation = () => {
                     state.value.inflationTriggered = true;
                     if (state.value.view === 'student') updateStudentChart();
@@ -738,12 +750,12 @@
                     
                     FATE_CARDS,
                     drawnCardIndices: computed(() => state.value.drawnCardIndices),
-                    triggerInflation, drawFateCard, setStage, resetGame, hardReset,
+                    triggerInflation, drawFateCard, setStage, resetGame, hardReset, openTeacherView,
                     categories, investmentOptions, investmentRemaining,
                     formatMoney, calculateBalance, calculateTotalExpense, isFoodHigh,
                     getTrafficLightColor, getBudgetStatusColor, currentGroupBalance, sortedGroups,
                     isCardDeckEmpty,
-                    currentGroup // Make sure this is returned to be used in v-if
+                    currentGroup
                 };
             }
         }).mount('#app');
