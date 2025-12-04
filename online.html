@@ -437,6 +437,12 @@
                             const remoteData = docSnap.data();
                             if(!remoteData.groups) remoteData.groups = JSON.parse(JSON.stringify(defaultGroups));
                             sessionData.value = remoteData;
+                            
+                            // 學生在連線後，檢查是否已經選組。如果沒選，就停留在選組大廳
+                            if(view.value.startsWith('student') && myGroupIndex.value === null) {
+                                view.value = 'student-lobby';
+                            }
+                            
                         } else {
                             if (view.value.startsWith('student')) {
                                 alert("房間找不到或已被關閉");
@@ -467,7 +473,6 @@
                             
                             connectToSession(formattedCode);
                             view.value = 'teacher';
-                            // 老師登入也存代碼
                             localStorage.setItem('yixinSession', formattedCode); 
                         } catch(e) {
                             alert("建立房間失敗: " + e.message);
@@ -493,6 +498,7 @@
                         if (docSnap.exists()) {
                             sessionCode.value = formattedCode;
                             connectToSession(formattedCode);
+                            // 學生連線成功後，強制進入選組大廳
                             view.value = 'student-lobby';
                             localStorage.setItem('yixinSession', formattedCode);
                         } else {
@@ -514,7 +520,7 @@
 
                 const logout = () => {
                     localStorage.removeItem('yixinSession');
-                    localStorage.removeItem('yixinGroup'); // 退出/換房時，清除組別記憶
+                    localStorage.removeItem('yixinGroup'); 
                     view.value = 'welcome';
                     sessionCodeInput.value = '';
                     sessionCode.value = '';
