@@ -7,13 +7,10 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -22,13 +19,13 @@
         .transition-all { transition: all 0.3s ease; }
         
         input[type=range] { 
-            -webkit-appearance: none; background: transparent; cursor: pointer; position: relative; z-index: 20; height: 24px; margin: 10px 0;
+            -webkit-appearance: none; background: transparent; cursor: pointer; position: relative; z-index: 20; height: 30px; margin: 10px 0;
         }
         input[type=range]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #ffffff; border: 3px solid currentColor; cursor: pointer; margin-top: -10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+            -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: #ffffff; border: 3px solid currentColor; cursor: pointer; margin-top: -12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); 
         }
         input[type=range]::-webkit-slider-runnable-track { 
-            width: 100%; height: 6px; cursor: pointer; background: #e2e8f0; border-radius: 4px; 
+            width: 100%; height: 8px; cursor: pointer; background: #e2e8f0; border-radius: 4px; 
         }
         
         .accent-10B981 { color: #10B981; }
@@ -40,9 +37,7 @@
 
         [v-cloak] { display: none; }
         
-        .status-dot {
-            width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px;
-        }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
         .status-online { background-color: #10B981; box-shadow: 0 0 5px #10B981; }
         .status-offline { background-color: #EF4444; }
     </style>
@@ -56,7 +51,7 @@
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-2 font-bold text-lg">
                     <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">雲端版</span>
-                    <span class="hidden md:inline">一新中學理財工作坊</span>
+                    <span class="hidden md:inline">一新中學理財</span>
                     <div class="flex items-center ml-4 text-xs font-normal">
                         <span class="status-dot" :class="dbConnected ? 'status-online' : 'status-offline'"></span>
                         {{ dbConnected ? '已連線' : '連線中...' }}
@@ -73,10 +68,9 @@
             <h1 class="text-3xl md:text-5xl font-bold text-slate-800 text-center">理財體驗課 <span class="text-blue-600">Online</span></h1>
             
             <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
-                <!-- 遊戲代碼輸入 -->
                 <div class="mb-6">
                     <label class="block text-sm font-bold text-gray-700 mb-2">請輸入遊戲代碼 (由老師提供)</label>
-                    <input type="text" v-model.trim="sessionCode" placeholder="例如: classA" 
+                    <input type="text" v-model.trim="sessionCode" placeholder="例如: class101" 
                         class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none text-xl font-mono text-center uppercase">
                 </div>
 
@@ -92,36 +86,46 @@
                         我是學生
                     </button>
                 </div>
-                
-                <p class="text-center text-xs text-gray-400 mt-4">
-                    老師需輸入密碼建立房間，學生可直接加入。
-                </p>
             </div>
         </div>
 
-        <!-- 2. 老師控制台 (Teacher Dashboard) -->
+        <!-- 2. 學生選組大廳 (新功能：防止預設第1組) -->
+        <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh]">
+            <h2 class="text-2xl font-bold mb-6 text-center">請選擇你的組別</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
+                <button v-for="(g, idx) in sessionData.groups" :key="idx" 
+                    @click="confirmGroupSelection(idx)"
+                    class="p-4 rounded-xl border-2 hover:bg-blue-50 transition text-lg font-bold"
+                    :class="myGroupIndex === idx ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-600'">
+                    {{ g.name }}
+                </button>
+            </div>
+            <p class="mt-8 text-slate-400 text-sm">房間代碼: {{ sessionCode }}</p>
+        </div>
+
+        <!-- 3. 老師控制台 -->
         <div v-if="view === 'teacher'" class="container mx-auto p-4 md:p-6 space-y-6">
             <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
                 <div>
                     <h2 class="text-xl font-bold">老師後台</h2>
-                    <p class="text-sm text-gray-500">房間代碼: <span class="font-mono font-bold text-blue-600 text-lg">{{ sessionCode }}</span></p>
+                    <p class="text-sm text-gray-500">代碼: <span class="font-mono font-bold text-blue-600 text-lg">{{ sessionCode }}</span></p>
                 </div>
                 <div class="flex space-x-2">
                     <button v-for="s in [1, 2, 3]" :key="s" @click="updateStage(s)" 
                         :class="sessionData.stage === s ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'"
-                        class="px-4 py-2 rounded-lg font-bold transition text-sm">
-                        {{ ['預算', '投資', '總結'][s-1] }}
+                        class="px-3 py-2 rounded-lg font-bold transition text-xs md:text-sm">
+                        {{ ['1.預算', '2.投資', '3.總結'][s-1] }}
                     </button>
                 </div>
             </div>
 
-            <!-- 控制按鈕區 -->
+            <!-- 控制按鈕 -->
             <div class="flex flex-wrap gap-3">
                 <button v-if="sessionData.stage === 1" @click="toggleInflation" 
                     :class="sessionData.inflationTriggered ? 'bg-rose-500 text-white' : 'bg-white text-rose-500 border border-rose-500'"
                     class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center">
                     <i class="fa-solid fa-triangle-exclamation mr-2"></i> 
-                    {{ sessionData.inflationTriggered ? '通膨已觸發 (點擊取消)' : '觸發通膨事件' }}
+                    {{ sessionData.inflationTriggered ? '取消通膨' : '觸發通膨' }}
                 </button>
 
                 <button v-if="sessionData.stage === 2" @click="drawFateCard" 
@@ -129,105 +133,94 @@
                     <i class="fa-solid fa-dice mr-2"></i> 抽取命運卡
                 </button>
                 
-                <button @click="resetGame" class="ml-auto px-4 py-2 text-sm text-gray-400 hover:text-red-500 underline">
-                    重置所有數據
-                </button>
+                <button @click="resetGame" class="ml-auto px-4 py-2 text-sm text-gray-400 hover:text-red-500 underline">重置數據</button>
             </div>
 
-            <!-- 數據監控區 (即時同步顯示) -->
+            <!-- 數據展示 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- 預算階段顯示總表 -->
+                <!-- 預算總覽 -->
                 <div v-if="sessionData.stage === 1" class="md:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div v-for="(g, idx) in sessionData.groups" :key="idx" 
-                        class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <div class="flex justify-between mb-2">
-                            <span class="font-bold">{{ g.name }}</span>
-                            <span class="text-xs px-2 py-1 rounded-full" 
+                        class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+                        <div class="flex justify-between mb-1">
+                            <span class="font-bold text-sm">{{ g.name }}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full" 
                                 :class="calculateBalance(g) < 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'">
-                                {{ calculateBalance(g) < 0 ? '透支' : '正常' }}
+                                {{ calculateBalance(g) < 0 ? '透支' : 'OK' }}
                             </span>
                         </div>
-                        <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div class="h-full bg-blue-500" :style="{width: (calculateTotalExpense(g)/INCOME*100) + '%'}"></div>
-                        </div>
-                        <div class="text-xs text-right mt-1 text-slate-400">{{ formatMoney(calculateTotalExpense(g)) }} / 20,000</div>
+                        <div class="text-xs text-right text-slate-400">{{ formatMoney(calculateTotalExpense(g)) }}</div>
                     </div>
                 </div>
 
-                <!-- 投資階段顯示排行 -->
-                <div v-if="sessionData.stage === 2" class="md:col-span-3">
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="font-bold mb-4">即時資產排行 (自動同步)</h3>
-                        <div v-if="sessionData.lastDrawnCard" class="mb-4 p-3 bg-indigo-50 text-indigo-700 rounded-lg text-center animate-pulse">
-                            最新事件：<strong>{{ sessionData.lastDrawnCard }}</strong>
-                        </div>
-                        <div class="space-y-2">
-                            <div v-for="(g, idx) in sortedGroups" :key="idx" class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                <!-- 投資排行 (修正：Bar Chart) -->
+                <div v-if="sessionData.stage === 2" class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-1 bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="font-bold mb-4">即時資產排行</h3>
+                        <div class="space-y-2 max-h-[400px] overflow-y-auto">
+                            <div v-for="(g, idx) in sortedGroups" :key="idx" class="flex justify-between items-center p-2 bg-slate-50 rounded">
                                 <div class="flex items-center">
-                                    <span class="w-6 h-6 flex items-center justify-center bg-slate-200 rounded-full text-xs font-bold mr-3">{{ idx + 1 }}</span>
-                                    <span>{{ g.name }}</span>
-                                    <span class="ml-2 text-xs px-2 py-0.5 rounded border" :class="g.riskProfile==='aggressive'?'border-red-400 text-red-500':'border-green-400 text-green-500'">
+                                    <span class="w-5 h-5 flex items-center justify-center bg-slate-200 rounded-full text-xs font-bold mr-2">{{ idx + 1 }}</span>
+                                    <span class="text-sm font-bold">{{ g.name }}</span>
+                                    <span class="ml-2 text-[10px] px-1 rounded border" :class="g.riskProfile==='aggressive'?'border-red-400 text-red-500':'border-green-400 text-green-500'">
                                         {{ g.riskProfile==='aggressive'?'積極':'穩健' }}
                                     </span>
                                 </div>
-                                <span class="font-mono font-bold text-blue-600">{{ formatMoney(Math.round(g.totalAssets)) }}</span>
+                                <span class="font-mono text-sm text-blue-600">{{ formatMoney(Math.round(g.totalAssets)) }}</span>
                             </div>
                         </div>
                     </div>
+                    <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="font-bold mb-4">資產分佈圖</h3>
+                        <div class="h-64"><canvas id="teacherAssetChart"></canvas></div>
+                    </div>
                 </div>
 
-                <!-- 總結階段圖表 -->
+                <!-- 總結圖表 -->
                 <div v-if="sessionData.stage === 3" class="md:col-span-3 bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4 text-center">20 年資產模擬 (前後三名)</h3>
-                    <div class="h-80"><canvas id="teacherChart"></canvas></div>
+                    <div class="h-80"><canvas id="teacherLineChart"></canvas></div>
                 </div>
             </div>
         </div>
 
-        <!-- 3. 學生操作介面 (Student Interface) -->
-        <div v-if="view === 'student'" class="container mx-auto p-4 md:p-6 space-y-6 max-w-md pb-24">
+        <!-- 4. 學生遊戲介面 -->
+        <div v-if="view === 'student-game'" class="container mx-auto p-4 md:p-6 space-y-6 max-w-md pb-24">
             
-            <!-- 學生頂部資訊 -->
-            <div class="sticky top-16 z-30 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-2">
-                    <div class="text-xs text-slate-500">房間: {{ sessionCode }}</div>
-                    <div class="text-xs font-bold" :class="dbConnected ? 'text-green-500' : 'text-red-500'">
-                        {{ dbConnected ? '● 連線中' : '● 斷線' }}
-                    </div>
+            <div class="sticky top-4 z-30 bg-white p-4 rounded-xl shadow-lg border-2 border-blue-100 flex justify-between items-center">
+                <div>
+                    <div class="text-xs text-slate-500">我是: <span class="font-bold text-slate-800">{{ myGroup.name }}</span></div>
+                    <div class="text-xs text-slate-400">房間: {{ sessionCode }}</div>
                 </div>
-                <div class="flex items-center justify-between">
-                    <label class="text-sm font-bold text-slate-700">我是：</label>
-                    <select v-model="myGroupIndex" class="bg-slate-100 border-none rounded-lg py-1 px-3 font-bold text-slate-700 focus:ring-2 focus:ring-blue-500">
-                        <option v-for="(g, idx) in sessionData.groups" :key="idx" :value="idx">{{ g.name }}</option>
-                    </select>
+                <div class="text-xs font-bold" :class="dbConnected ? 'text-green-500' : 'text-red-500'">
+                    {{ dbConnected ? '● 連線中' : '● 斷線' }}
                 </div>
             </div>
 
-            <!-- 學生內容 - 依照老師設定的 Stage 自動切換 -->
-            
             <!-- Stage 1: 預算 -->
-            <div v-if="sessionData.stage === 1" class="bg-white rounded-2xl shadow-lg p-6 space-y-6">
-                <div v-if="sessionData.inflationTriggered" class="bg-rose-100 text-rose-700 p-3 rounded-lg text-sm font-bold animate-bounce text-center">
-                    <i class="fa-solid fa-triangle-exclamation"></i> 通膨發生了！支出增加 10%
+            <div v-if="sessionData.stage === 1" class="bg-white rounded-2xl shadow-sm p-6 space-y-6 border border-slate-100">
+                <div v-if="sessionData.inflationTriggered" class="bg-rose-100 text-rose-700 p-3 rounded-lg text-sm font-bold animate-pulse text-center">
+                    <i class="fa-solid fa-triangle-exclamation"></i> 警告：通膨發生！支出增加 10%
                 </div>
 
                 <div class="flex justify-between items-end">
                     <h2 class="text-xl font-bold">預算規劃</h2>
                     <div class="text-right">
-                        <div class="text-xs text-slate-500">結餘</div>
+                        <div class="text-xs text-slate-500">本月結餘</div>
                         <div class="text-xl font-mono font-bold" :class="myBalance < 0 ? 'text-red-500' : 'text-green-500'">
                             {{ formatMoney(myBalance) }}
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-4">
+                <div class="space-y-6">
                     <div v-for="(val, key) in myGroup.budget" :key="key">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="font-medium text-slate-700 capitalize">{{ translate(key) }}</span>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="font-medium text-slate-700 flex items-center">
+                                <i :class="getIcon(key)" class="mr-2 w-5 text-center text-slate-400"></i> {{ translate(key) }}
+                            </span>
                             <span class="font-mono text-slate-500">{{ formatMoney(calculateExpenseItem(val)) }}</span>
                         </div>
-                        <!-- @change 確保拖曳放開後才上傳，減少資料庫寫入次數 -->
                         <input type="range" min="0" max="10000" step="500" 
                             v-model.number="myGroup.budget[key]" 
                             @change="saveMyGroupData"
@@ -237,18 +230,17 @@
             </div>
 
             <!-- Stage 2: 投資 -->
-            <div v-if="sessionData.stage === 2" class="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+            <div v-if="sessionData.stage === 2" class="bg-white rounded-2xl shadow-sm p-6 space-y-6 border border-slate-100">
                 <div class="flex justify-between items-end">
                     <h2 class="text-xl font-bold">投資配置</h2>
                     <div class="text-right">
-                        <div class="text-xs text-slate-500">剩餘資金</div>
-                        <div class="text-xl font-mono font-bold" :class="investmentRemaining < 0 ? 'text-red-500' : 'text-slate-700'">
+                        <div class="text-xs text-slate-500">剩餘資金 (需為 0)</div>
+                        <div class="text-xl font-mono font-bold" :class="investmentRemaining !== 0 ? 'text-red-500' : 'text-slate-700'">
                             {{ formatMoney(investmentRemaining) }}
                         </div>
                     </div>
                 </div>
 
-                <!-- 風險偏好 -->
                 <div class="grid grid-cols-2 gap-3">
                     <button @click="setRisk('conservative')" :class="myGroup.riskProfile === 'conservative' ? 'ring-2 ring-green-500 bg-green-50' : 'bg-slate-50'" class="p-3 rounded-xl border transition text-sm font-bold">
                         穩健型 (綠)
@@ -258,10 +250,10 @@
                     </button>
                 </div>
 
-                <div class="space-y-4">
+                <div class="space-y-6">
                     <div v-for="(val, key) in myGroup.investment" :key="key">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="font-medium text-slate-700 capitalize">{{ translate(key) }}</span>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="font-medium text-slate-700">{{ translate(key) }}</span>
                             <span class="font-mono text-slate-500">{{ formatMoney(val) }}</span>
                         </div>
                         <input type="range" min="0" max="100000" step="5000" 
@@ -271,38 +263,32 @@
                     </div>
                 </div>
 
-                <!-- 顯示最近的命運卡效果 -->
-                <div v-if="sessionData.lastDrawnCard" class="mt-4 p-4 bg-indigo-600 text-white rounded-xl shadow-lg text-center">
-                    <p class="text-xs opacity-75">最新市場消息</p>
+                <div v-if="sessionData.lastDrawnCard" class="mt-4 p-4 bg-indigo-600 text-white rounded-xl shadow-lg text-center animate-bounce">
+                    <p class="text-xs opacity-75">市場快訊</p>
                     <p class="text-lg font-bold">{{ sessionData.lastDrawnCard }}</p>
-                    <p class="text-sm mt-1">資產已自動更新！</p>
+                    <p class="text-sm mt-1">資產已更新！</p>
                 </div>
             </div>
 
             <!-- Stage 3: 結束 -->
             <div v-if="sessionData.stage === 3" class="bg-white rounded-2xl shadow-lg p-10 text-center">
-                <i class="fa-solid fa-graduation-cap text-6xl text-emerald-500 mb-4"></i>
+                <i class="fa-solid fa-trophy text-6xl text-yellow-400 mb-4"></i>
                 <h2 class="text-2xl font-bold mb-2">課程結束！</h2>
-                <p class="text-slate-500">請抬頭看大螢幕，參與老師的總結討論。</p>
                 <div class="mt-6 p-4 bg-slate-100 rounded-lg">
                     <p class="text-sm text-gray-500">您的最終資產</p>
                     <p class="text-3xl font-mono font-bold text-slate-800">{{ formatMoney(Math.round(myGroup.totalAssets)) }}</p>
                 </div>
+                <p class="text-slate-500 text-sm mt-4">請看老師螢幕進行總結。</p>
             </div>
-
         </div>
-
     </div>
 
-    <!-- 邏輯程式碼 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ============================================================
-        // ⚠️ 您提供的 Config
-        // ============================================================
+        // 您的 Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyBl_7bBubA98S9RYSO_wR4PQdPiN9DT_aU",
             authDomain: "yixin-monopoly-game.firebaseapp.com",
@@ -315,7 +301,6 @@
 
         const { createApp, ref, computed, watch, nextTick, onMounted } = Vue;
 
-        // 初始資料結構
         const INCOME = 20000;
         const INITIAL_CAPITAL = 100000;
         
@@ -330,27 +315,24 @@
         }));
 
         const FATE_CARDS = [
-            { title: "股市大漲 (Bull Market)", effect: { stocks: 1.25, etf: 1.10, savings: 1.005, entrepreneurship: 1.05 } },
-            { title: "金融海嘯 (Market Crash)", effect: { stocks: 0.70, etf: 0.90, savings: 1.00, entrepreneurship: 0.80 } },
-            { title: "ETF穩健成長 (ETF Growth)", effect: { stocks: 1.05, etf: 1.15, savings: 1.005, entrepreneurship: 1.0 } },
-            { title: "全球通膨升溫 (Inflation)", effect: { stocks: 0.95, etf: 0.98, savings: 1.00, entrepreneurship: 0.90 } },
-            { title: "創業獨角獸 (Unicorn!)", effect: { stocks: 1.0, etf: 1.05, savings: 1.005, entrepreneurship: 2.5 } },
-            { title: "科技泡沫 (Tech Bubble)", effect: { stocks: 0.85, etf: 0.95, savings: 1.00, entrepreneurship: 0.5 } },
+            { title: "股市大漲", effect: { stocks: 1.25, etf: 1.10, savings: 1.005, entrepreneurship: 1.05 } },
+            { title: "金融海嘯", effect: { stocks: 0.70, etf: 0.90, savings: 1.00, entrepreneurship: 0.80 } },
+            { title: "ETF 穩健成長", effect: { stocks: 1.05, etf: 1.15, savings: 1.005, entrepreneurship: 1.0 } },
+            { title: "全球通膨升溫", effect: { stocks: 0.95, etf: 0.98, savings: 1.00, entrepreneurship: 0.90 } },
+            { title: "創業獨角獸", effect: { stocks: 1.0, etf: 1.05, savings: 1.005, entrepreneurship: 2.5 } },
+            { title: "科技泡沫", effect: { stocks: 0.85, etf: 0.95, savings: 1.00, entrepreneurship: 0.5 } },
         ];
 
         createApp({
             setup() {
-                // Firebase 實例
                 let db = null;
                 let unsubscribe = null;
 
-                // 狀態
-                const view = ref('welcome'); // welcome, teacher, student
+                const view = ref('welcome'); 
                 const sessionCode = ref('');
                 const dbConnected = ref(false);
-                const myGroupIndex = ref(0); // 學生當前選擇的組別 (0-12)
+                const myGroupIndex = ref(null); // 改為 null 強制選擇
                 
-                // 整個遊戲的資料 (會與 Firebase 同步)
                 const sessionData = ref({
                     stage: 1,
                     inflationTriggered: false,
@@ -360,104 +342,78 @@
                     lastDrawnCard: null
                 });
 
-                // --- 初始化 Firebase ---
+                // 初始化 Firebase
                 onMounted(async () => {
                     try {
                         const app = initializeApp(firebaseConfig);
                         const auth = getAuth(app);
-                        
-                        // 嘗試匿名登入，若失敗則跳過（讓測試模式可用）
-                        try {
-                            await signInAnonymously(auth);
-                        } catch (err) {
-                            console.warn("Auth skipped or failed:", err);
-                        }
-
+                        try { await signInAnonymously(auth); } catch (e) {}
                         db = getFirestore(app);
                         dbConnected.value = true;
-                        console.log("Firebase 連線成功");
                     } catch (e) {
-                        console.error("Firebase 連線失敗", e);
-                        alert("連線失敗，請檢查 Config");
+                        alert("Firebase 連線失敗");
                     }
                 });
 
-                // --- 連線到特定房間 (訂閱資料) ---
+                // 監聽房間數據
                 const connectToSession = (code) => {
                     if (!db) return;
-                    // 取消舊的訂閱
                     if (unsubscribe) unsubscribe();
                     
                     const docRef = doc(db, "sessions", code);
-                    // 監聽變動 (Real-time Listener)
                     unsubscribe = onSnapshot(docRef, (docSnap) => {
                         if (docSnap.exists()) {
                             sessionData.value = docSnap.data();
-                            // 教師端若在階段3，更新圖表
-                            if (view.value === 'teacher' && sessionData.value.stage === 3) {
-                                nextTick(initTeacherCharts);
-                            }
                         } else {
-                            // 若房間不存在，如果是學生則提示
-                            if (view.value === 'student') {
-                                alert("找不到此房間，請確認代碼");
+                            if (view.value.startsWith('student')) {
+                                alert("房間不存在");
                                 view.value = 'welcome';
                             }
                         }
+                    }, (error) => {
+                        if(error.code === 'permission-denied') alert("權限不足，請檢查 Firebase Rules");
                     });
                 };
 
-                // --- 身份處理 ---
                 const handleTeacherLogin = async () => {
-                    // 僅顯示提示，不顯示密碼
                     let pwd = prompt("請輸入老師密碼：");
-                    if (!pwd) return; 
-                    pwd = pwd.trim().toLowerCase(); 
-
-                    if (pwd === "yixin2025") {
-                        if (!sessionCode.value) return alert("請輸入房間代碼");
-                        
-                        // 確認資料庫狀態
-                        if (!db) return alert("資料庫尚未連線，請重新整理頁面");
+                    if (pwd && pwd.trim().toLowerCase() === "yixin2025") {
+                        if (!sessionCode.value) return alert("請輸入代碼");
+                        if (!db) return alert("連線中...");
 
                         try {
-                            // 嘗試建立房間 (若不存在)
                             const docRef = doc(db, "sessions", sessionCode.value);
-                            // 初始化資料 (預設)
+                            // 老師登入時，若房間不存在則建立；若存在則合併 (不覆蓋現有進度)
                             await setDoc(docRef, sessionData.value, { merge: true }); 
-                            
                             connectToSession(sessionCode.value);
                             view.value = 'teacher';
                         } catch(e) {
-                            console.error(e);
-                            if (e.code === 'permission-denied') {
-                                alert("建立失敗！權限不足。\n請到 Firebase Console -> Firestore -> Rules\n將 'allow read, write: if false;' 改為 'if true;'");
-                            } else {
-                                alert("建立房間失敗: " + e.message);
-                            }
+                            alert("建立房間失敗: " + e.message);
                         }
                     } else {
-                        alert("密碼錯誤！"); // 不再回顯輸入的錯誤密碼
+                        alert("密碼錯誤");
                     }
                 };
 
                 const handleStudentLogin = () => {
-                    if (!sessionCode.value) return alert("請輸入房間代碼");
+                    if (!sessionCode.value) return alert("請輸入代碼");
                     connectToSession(sessionCode.value);
-                    view.value = 'student';
+                    view.value = 'student-lobby'; // 進入選組大廳
                 };
 
-                // --- 學生操作：上傳資料 ---
+                const confirmGroupSelection = (idx) => {
+                    myGroupIndex.value = idx;
+                    view.value = 'student-game'; // 進入遊戲
+                };
+
+                // 儲存邏輯 (使用 @change 觸發，減少寫入量)
                 const saveMyGroupData = async () => {
-                    if (!db || !sessionCode.value) return;
-                    // 更新自己這組的資料
+                    if (!db || !sessionCode.value || myGroupIndex.value === null) return;
                     const docRef = doc(db, "sessions", sessionCode.value);
-                    const groupPath = `groups.${myGroupIndex.value}`; // Firestore 路徑語法
-                    
-                    // 建立更新物件
-                    await updateDoc(docRef, {
-                        [groupPath]: sessionData.value.groups[myGroupIndex.value]
-                    });
+                    const groupPath = `groups.${myGroupIndex.value}`;
+                    try {
+                        await updateDoc(docRef, { [groupPath]: sessionData.value.groups[myGroupIndex.value] });
+                    } catch(e) { console.error(e); }
                 };
                 
                 const setRisk = (profile) => {
@@ -465,7 +421,7 @@
                     saveMyGroupData();
                 };
 
-                // --- 老師操作 ---
+                // 老師控制邏輯
                 const updateStage = async (s) => {
                     const docRef = doc(db, "sessions", sessionCode.value);
                     await updateDoc(docRef, { stage: s });
@@ -477,16 +433,13 @@
                 };
 
                 const drawFateCard = async () => {
-                    // 計算還沒抽過的卡
                     const availableIndices = FATE_CARDS.map((_, i) => i).filter(i => !sessionData.value.drawnCardIndices.includes(i));
-                    
                     if (availableIndices.length === 0) return alert("卡牌已用盡");
 
-                    const randomIndex = Math.floor(Math.random() * availableIndices.length);
-                    const cardIndex = availableIndices[randomIndex];
-                    const card = FATE_CARDS[cardIndex];
+                    const idx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+                    const card = FATE_CARDS[idx];
 
-                    // 在後端計算所有組的新資產 (這是後端邏輯，確保統一)
+                    // 後端計算所有組的新資產
                     const newGroups = sessionData.value.groups.map(g => {
                         const newInv = {
                             savings: g.investment.savings * card.effect.savings,
@@ -495,19 +448,14 @@
                             entrepreneurship: g.investment.entrepreneurship * card.effect.entrepreneurship
                         };
                         const total = Object.values(newInv).reduce((a, b) => a + b, 0);
-                        return { 
-                            ...g, 
-                            investment: newInv, 
-                            totalAssets: total,
-                            history: [...(g.history || []), total]
-                        };
+                        return { ...g, investment: newInv, totalAssets: total, history: [...(g.history || []), total] };
                     });
 
                     const docRef = doc(db, "sessions", sessionCode.value);
                     await updateDoc(docRef, {
                         groups: newGroups,
                         lastDrawnCard: card.title,
-                        drawnCardIndices: [...sessionData.value.drawnCardIndices, cardIndex],
+                        drawnCardIndices: [...sessionData.value.drawnCardIndices, idx],
                         round: sessionData.value.round + 1
                     });
                 };
@@ -515,20 +463,16 @@
                 const resetGame = async () => {
                     if (confirm("確定重置？")) {
                         const docRef = doc(db, "sessions", sessionCode.value);
-                        const resetData = {
-                            stage: 1,
-                            inflationTriggered: false,
-                            round: 0,
+                        await setDoc(docRef, {
+                            stage: 1, inflationTriggered: false, round: 0,
                             groups: JSON.parse(JSON.stringify(defaultGroups)),
-                            drawnCardIndices: [],
-                            lastDrawnCard: null
-                        };
-                        await setDoc(docRef, resetData);
+                            drawnCardIndices: [], lastDrawnCard: null
+                        });
                     }
                 };
 
-                // --- 計算邏輯 (與單機版相同) ---
-                const myGroup = computed(() => sessionData.value.groups[myGroupIndex.value]);
+                // 計算邏輯
+                const myGroup = computed(() => myGroupIndex.value !== null ? sessionData.value.groups[myGroupIndex.value] : defaultGroups[0]);
                 
                 const calculateTotalExpense = (g) => {
                     const raw = Object.values(g.budget).reduce((a, b) => a + b, 0);
@@ -546,77 +490,111 @@
                 });
 
                 const isCardDeckEmpty = computed(() => sessionData.value.drawnCardIndices.length >= FATE_CARDS.length);
-
-                // --- 輔助 ---
                 const formatMoney = (val) => new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 }).format(val);
                 const translate = (key) => {
                     const map = { food: '食物', transport: '交通', entertainment: '娛樂', education: '學習', family: '家庭', savings: '定存', etf: 'ETF', stocks: '股票', entrepreneurship: '創業' };
                     return map[key] || key;
                 };
+                const getIcon = (key) => {
+                    const map = { food: 'fa-bowl-food', transport: 'fa-bus', entertainment: 'fa-gamepad', education: 'fa-book', family: 'fa-house' };
+                    return `fa-solid ${map[key] || 'fa-coins'}`;
+                };
                 const getColorClass = (key) => `accent-${{food:'10B981', transport:'3B82F6', entertainment:'F59E0B', education:'8B5CF6', family:'EF4444'}[key]}`;
 
-                // --- 圖表 (簡化版) ---
-                let chartInstance = null;
-                const initTeacherCharts = () => {
-                    const ctx = document.getElementById('teacherChart');
-                    if (!ctx) return;
-                    if (chartInstance) chartInstance.destroy();
+                // 圖表邏輯 (Watch sessionData to update charts)
+                let teacherAssetChartInstance = null;
+                let teacherLineChartInstance = null;
 
-                    // 只取前三與後三
-                    const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
-                    const top3 = sorted.slice(0, 3);
-                    const bottom3 = sorted.slice(-3);
-                    const targets = [...new Set([...top3, ...bottom3])]; // 去重
+                const updateCharts = () => {
+                    if (view.value !== 'teacher') return;
 
-                    const years = Array.from({length: 21}, (_, i) => `${i}年`);
-                    const datasets = targets.map(g => {
-                        // 這裡使用簡化版的模擬運算 (與單機版類似)
-                        // 為了讓連線版順暢，我們直接模擬未來
-                        const total = g.totalAssets || 1;
-                        const inv = g.investment;
-                        // 加權報酬率
-                        const rate = 1 + ((inv.savings*0.02 + inv.etf*0.06 + inv.stocks*0.08 + inv.entrepreneurship*0.12) / total);
-                        
-                        // 風險判定
-                        const isHighRisk = (inv.entrepreneurship / total) > 0.3;
-                        // 使用 Group ID 當種子來決定是否失敗 (保持一致性)
-                        const willFail = isHighRisk && ((g.id * 7) % 10 < 3); // 30% 機率
-
-                        let data = [];
-                        let current = g.totalAssets;
-                        for(let y=0; y<=20; y++) {
-                            data.push(current);
-                            if (willFail && y >= 9) current *= 0.98; // 失敗後縮水
-                            else current *= rate;
+                    // Bar Chart (Stage 2)
+                    if (sessionData.value.stage === 2) {
+                        const ctx = document.getElementById('teacherAssetChart');
+                        if (ctx) {
+                            if (teacherAssetChartInstance) teacherAssetChartInstance.destroy();
+                            teacherAssetChartInstance = new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: sessionData.value.groups.map(g => g.name),
+                                    datasets: [
+                                        { label: '儲蓄', data: sessionData.value.groups.map(g => g.investment.savings), backgroundColor: '#10B981', stack: 'Stack 0' },
+                                        { label: 'ETF', data: sessionData.value.groups.map(g => g.investment.etf), backgroundColor: '#3B82F6', stack: 'Stack 0' },
+                                        { label: '股票', data: sessionData.value.groups.map(g => g.investment.stocks), backgroundColor: '#F59E0B', stack: 'Stack 0' },
+                                        { label: '創業', data: sessionData.value.groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF4444', stack: 'Stack 0' },
+                                    ]
+                                },
+                                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+                            });
                         }
+                    }
 
-                        // 顏色判斷
-                        const rank = sorted.findIndex(sg => sg.id === g.id);
-                        const color = rank < 3 ? '#10B981' : '#EF4444'; // 綠 vs 紅
+                    // Line Chart (Stage 3)
+                    if (sessionData.value.stage === 3) {
+                        const ctx = document.getElementById('teacherLineChart');
+                        if (ctx) {
+                            if (teacherLineChartInstance) teacherLineChartInstance.destroy();
+                            
+                            const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
+                            const top3Ids = sorted.slice(0, 3).map(g => g.id);
+                            const bottom3Ids = sorted.slice(-3).map(g => g.id);
+                            const targets = sessionData.value.groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
 
-                        return {
-                            label: g.name + (willFail ? ' (風險)' : ''),
-                            data: data,
-                            borderColor: color,
-                            fill: false
-                        };
-                    });
+                            const years = Array.from({length: 21}, (_, i) => `${i}年`);
+                            const datasets = targets.map(g => {
+                                const total = g.totalAssets || 1;
+                                const inv = g.investment;
+                                const rate = 1 + ((inv.savings*0.02 + inv.etf*0.06 + inv.stocks*0.08 + inv.entrepreneurship*0.12) / total);
+                                const isHighRisk = (inv.entrepreneurship / total) > 0.3;
+                                const willFail = isHighRisk && ((g.id * 7) % 10 < 3);
 
-                    chartInstance = new Chart(ctx, {
-                        type: 'line',
-                        data: { labels: years, datasets: datasets },
-                        options: { responsive: true, maintainAspectRatio: false }
-                    });
+                                let data = [];
+                                let current = g.totalAssets;
+                                for(let y=0; y<=20; y++) {
+                                    data.push(Math.round(current));
+                                    if (willFail && y >= 9) current *= 0.98;
+                                    else current *= rate;
+                                }
+
+                                const rank = sorted.findIndex(sg => sg.id === g.id) + 1;
+                                const color = rank <= 3 ? '#10B981' : '#EF4444';
+
+                                return {
+                                    label: `No.${rank} ${g.name}` + (willFail ? ' (風險爆發)' : ''),
+                                    data: data,
+                                    borderColor: color,
+                                    borderWidth: rank <= 3 ? 3 : 1,
+                                    fill: false,
+                                    tension: 0.4
+                                };
+                            });
+
+                            teacherLineChartInstance = new Chart(ctx, {
+                                type: 'line',
+                                data: { labels: years, datasets: datasets },
+                                options: { responsive: true, maintainAspectRatio: false }
+                            });
+                        }
+                    }
                 };
+
+                // Watchers
+                watch(() => sessionData.value, () => {
+                    nextTick(updateCharts);
+                }, { deep: true });
+
+                watch(() => sessionData.value.stage, () => {
+                    nextTick(updateCharts);
+                });
 
                 return {
                     view, sessionCode, dbConnected,
                     sessionData, myGroupIndex, myGroup,
-                    handleTeacherLogin, handleStudentLogin,
+                    handleTeacherLogin, handleStudentLogin, confirmGroupSelection,
                     updateStage, toggleInflation, drawFateCard, resetGame,
                     saveMyGroupData, setRisk,
                     calculateTotalExpense, calculateBalance, calculateExpenseItem,
-                    myBalance, investmentRemaining, formatMoney, translate, getColorClass,
+                    myBalance, investmentRemaining, formatMoney, translate, getColorClass, getIcon,
                     sortedGroups, isCardDeckEmpty,
                     INITIAL_CAPITAL, INCOME
                 };
