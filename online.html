@@ -301,7 +301,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ============================================================
-        // ⚠️ 已填入您的 Config
+        // ⚠️ 您提供的 Config
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyBl_7bBubA98S9RYSO_wR4PQdPiN9DT_aU",
@@ -404,21 +404,15 @@
                                 view.value = 'welcome';
                             }
                         }
-                    }, (error) => {
-                        // 處理權限錯誤 (最重要的錯誤訊息)
-                        if (error.code === 'permission-denied') {
-                            alert("錯誤：權限不足！\n請去 Firebase 後台將 Rules 改為 'if true;'");
-                        } else {
-                            console.error(error);
-                        }
                     });
                 };
 
                 // --- 身份處理 ---
                 const handleTeacherLogin = async () => {
-                    let pwd = prompt("請輸入老師密碼 (yixin2025)：");
+                    // 僅顯示提示，不顯示密碼
+                    let pwd = prompt("請輸入老師密碼：");
                     if (!pwd) return; 
-                    pwd = pwd.trim().toLowerCase(); // 防呆處理
+                    pwd = pwd.trim().toLowerCase(); 
 
                     if (pwd === "yixin2025") {
                         if (!sessionCode.value) return alert("請輸入房間代碼");
@@ -430,7 +424,7 @@
                             // 嘗試建立房間 (若不存在)
                             const docRef = doc(db, "sessions", sessionCode.value);
                             // 初始化資料 (預設)
-                            await setDoc(docRef, sessionData.value, { merge: true }); // merge 避免覆蓋正在進行的遊戲
+                            await setDoc(docRef, sessionData.value, { merge: true }); 
                             
                             connectToSession(sessionCode.value);
                             view.value = 'teacher';
@@ -443,7 +437,7 @@
                             }
                         }
                     } else {
-                        alert(`密碼錯誤！(您輸入的是: ${pwd})`);
+                        alert("密碼錯誤！"); // 不再回顯輸入的錯誤密碼
                     }
                 };
 
