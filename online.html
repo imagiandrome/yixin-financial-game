@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一新中學理財 × 投資體驗課 (雲端連線版)</title>
+    <title>一新中學理財 v3.0 (雲端版)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,20 +50,22 @@
         <nav class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-50">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-2 font-bold text-lg">
-                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">雲端版</span>
-                    <span class="hidden md:inline">一新中學理財</span>
+                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.0</span>
+                    <span class="hidden md:inline">一新中學理財 (雲端版)</span>
                     <div class="flex items-center ml-4 text-xs font-normal">
                         <span class="status-dot" :class="dbConnected ? 'status-online' : 'status-offline'"></span>
-                        {{ dbConnected ? '已連線' : '連線中...' }}
+                        {{ dbConnected ? '伺服器已連線' : '連線中...' }}
                     </div>
                 </div>
                 <div class="space-x-2 text-sm">
-                    <button @click="logout" class="hover:text-blue-400 transition px-2">退出/換房</button>
+                    <button @click="logout" class="hover:text-blue-400 transition px-2">
+                        <i class="fa-solid fa-right-from-bracket"></i> 退出
+                    </button>
                 </div>
             </div>
         </nav>
 
-        <!-- 1. 歡迎/登入畫面 -->
+        <!-- 1. 歡迎/登入畫面 (強制停留) -->
         <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-fade-in p-4">
             <h1 class="text-3xl md:text-5xl font-bold text-slate-800 text-center">理財體驗課 <span class="text-blue-600">Online</span></h1>
             
@@ -90,75 +92,29 @@
                     </button>
                 </div>
                 
-                <!-- 清除快取按鈕 -->
-                <div class="mt-6 text-center">
-                    <button @click="clearCache" class="text-xs text-gray-400 underline hover:text-red-500">
-                        遇到問題？點此清除暫存資料
+                <!-- 強制清除按鈕 -->
+                <div class="mt-8 text-center">
+                    <button @click="forceClear" class="text-xs text-gray-400 underline hover:text-red-500">
+                        按鈕沒反應？點此重置系統
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- 2. 學生選組大廳 -->
+        <!-- 2. 學生選組大廳 (強制進入此步驟) -->
         <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh]">
-            <h2 class="text-2xl font-bold mb-6 text-center">請選擇你的組別</h2>
+            <h2 class="text-2xl font-bold mb-2 text-center">👋 歡迎加入！</h2>
+            <p class="text-gray-500 mb-8 text-center">房間代碼: <span class="font-bold text-blue-600">{{ sessionCode }}</span></p>
             
-            <div v-if="!sessionData.groups || sessionData.groups.length === 0" class="text-center text-gray-500">
+            <h3 class="text-lg font-bold mb-4">請點擊選擇你的組別：</h3>
+            
+            <div v-if="!sessionData.groups || sessionData.groups.length === 0" class="text-center text-gray-500 p-8 border-2 border-dashed border-gray-300 rounded-xl">
                 <i class="fa-solid fa-spinner fa-spin text-3xl mb-2"></i><br>
-                正在讀取小組資料...
+                正在從雲端讀取小組資料...<br>
+                <span class="text-xs">(若卡在此處，請確認老師已建立房間)</span>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
                 <button v-for="(g, idx) in sessionData.groups" :key="idx" 
                     @click="confirmGroupSelection(idx)"
-                    class="p-4 rounded-xl border-2 hover:bg-blue-50 transition text-lg font-bold"
-                    :class="myGroupIndex === idx ? 'border-blue-500 bg-blue-50 text-blue-600 ring-2 ring-blue-200' : 'border-slate-200 text-slate-600'">
-                    {{ g.name }}
-                    <span v-if="myGroupIndex === idx" class="block text-xs font-normal text-blue-400">(上次選擇)</span>
-                </button>
-            </div>
-            <p class="mt-8 text-slate-400 text-sm">房間代碼: {{ sessionCode }}</p>
-        </div>
-
-        <!-- 3. 老師控制台 -->
-        <div v-if="view === 'teacher'" class="container mx-auto p-4 md:p-6 space-y-6">
-            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
-                <div>
-                    <h2 class="text-xl font-bold">老師後台</h2>
-                    <p class="text-sm text-gray-500">代碼: <span class="font-mono font-bold text-blue-600 text-lg">{{ sessionCode }}</span></p>
-                </div>
-                <div class="flex space-x-2">
-                    <button v-for="s in [1, 2, 3]" :key="s" @click="updateStage(s)" 
-                        :class="sessionData.stage === s ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'"
-                        class="px-3 py-2 rounded-lg font-bold transition text-xs md:text-sm">
-                        {{ ['1.預算', '2.投資', '3.總結'][s-1] }}
-                    </button>
-                </div>
-            </div>
-
-            <!-- 控制按鈕 -->
-            <div class="flex flex-wrap gap-3">
-                <button v-if="sessionData.stage === 1" @click="toggleInflation" 
-                    :class="sessionData.inflationTriggered ? 'bg-rose-500 text-white' : 'bg-white text-rose-500 border border-rose-500'"
-                    class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center">
-                    <i class="fa-solid fa-triangle-exclamation mr-2"></i> 
-                    {{ sessionData.inflationTriggered ? '取消通膨' : '觸發通膨' }}
-                </button>
-
-                <button v-if="sessionData.stage === 2" @click="drawFateCard" :disabled="isCardDeckEmpty"
-                    :class="isCardDeckEmpty ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
-                    class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center text-white">
-                    <i class="fa-solid fa-dice mr-2"></i> 
-                    {{ isCardDeckEmpty ? '卡牌已用盡' : `抽取命運卡 (${sessionData.drawnCardIndices.length}/${FATE_CARDS.length})` }}
-                </button>
-                
-                <button @click="resetGame" class="ml-auto px-4 py-2 text-sm text-gray-400 hover:text-red-500 underline">重置數據</button>
-            </div>
-
-            <!-- 數據展示 -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- 預算總覽 -->
-                <div v-if="sessionData.stage === 1" class="md:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div v-for="(g, idx) in sessionData.groups" :key="idx" 
-                        class="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-                        <div class
+                    class="p-4 rounded
