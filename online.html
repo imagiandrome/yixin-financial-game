@@ -42,6 +42,7 @@
                         'retro': '4px 4px 0px 0px rgba(7, 59, 76, 1)', 
                         'retro-sm': '2px 2px 0px 0px rgba(7, 59, 76, 1)',
                         'retro-xs': '1px 1px 0px 0px rgba(7, 59, 76, 1)',
+                        'inner-retro': 'inset 2px 2px 0px 0px rgba(7, 59, 76, 0.2)',
                     }
                 }
             }
@@ -55,7 +56,7 @@
             background-image: radial-gradient(#FFD166 2px, transparent 2px);
             background-size: 30px 30px;
         }
-        .transition-all { transition: all 0.3s ease; }
+        .transition-all { transition: all 0.2s ease; }
         
         /* 復古元件樣式 */
         .btn-retro {
@@ -76,21 +77,24 @@
             cursor: not-allowed;
         }
 
-        /* 小按鈕樣式 (用於階段切換) */
-        .btn-retro-sm {
+        /* 階段切換按鈕 (更明顯的狀態) */
+        .btn-stage {
             border: 2px solid #073B4C;
+            background-color: white;
+            color: #9CA3AF;
             box-shadow: 2px 2px 0px 0px #073B4C;
             transition: all 0.1s;
         }
-        .btn-retro-sm:active {
-            transform: translate(1px, 1px);
-            box-shadow: 1px 1px 0px 0px #073B4C;
+        .btn-stage:hover {
+            transform: translateY(-1px);
+            color: #073B4C;
         }
-        .btn-retro-sm.active {
+        .btn-stage.active {
             background-color: #118AB2; /* retro-blue */
             color: white;
-            transform: translate(1px, 1px);
-            box-shadow: 1px 1px 0px 0px #073B4C;
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px 0px #073B4C; /* 按下去的效果 */
+            border-color: #073B4C;
         }
 
         .card-retro {
@@ -219,7 +223,7 @@
             <div v-if="!sessionData.groups || sessionData.groups.length === 0" class="card-retro p-8 text-center bg-white">
                 <i class="fa-solid fa-triangle-exclamation text-4xl mb-4 text-retro-yellow"></i><br>
                 <span class="font-bold text-lg">等待老師建立遊戲資料...</span><br>
-                <span class="text-xs text-retro-red mt-2 block font-bold">(如果老師已建立，請老師按後台的「重置」修復資料)</span>
+                <span class="text-xs text-retro-red mt-2 block font-bold">(請老師按後台的「重置」修復資料)</span>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full max-w-4xl">
@@ -246,11 +250,11 @@
                         <p class="text-xs font-bold text-gray-400 uppercase">Room: {{ sessionCode }}</p>
                     </div>
                 </div>
-                <!-- 階段切換按鈕優化 -->
-                <div class="flex gap-3 bg-gray-50 p-2 rounded-xl border-2 border-gray-200">
+                <!-- 階段切換按鈕 -->
+                <div class="flex gap-2 bg-white p-1.5 rounded-lg border-2 border-retro-dark shadow-retro-xs">
                     <button v-for="s in [1, 2, 3]" :key="s" @click="updateStage(s)" 
-                        :class="sessionData.stage === s ? 'active' : 'bg-white text-gray-500 hover:text-retro-dark'"
-                        class="btn-retro-sm px-4 py-2 rounded-lg font-bold transition text-sm">
+                        :class="sessionData.stage === s ? 'active' : 'text-gray-400 hover:bg-gray-100'"
+                        class="btn-stage px-4 py-2 rounded-lg font-bold transition text-sm">
                         {{ ['1.預算', '2.投資', '3.總結'][s-1] }}
                     </button>
                 </div>
@@ -273,6 +277,7 @@
                     </span>
                 </button>
                 
+                <!-- 關鍵修復按鈕 -->
                 <button @click="resetGame" class="ml-auto btn-retro bg-gray-800 text-white px-4 py-2 rounded-lg text-sm">
                     <i class="fa-solid fa-wrench mr-1"></i> 修復資料
                 </button>
@@ -324,7 +329,9 @@
                     </div>
                     <div class="md:col-span-2 card-retro p-6 bg-white">
                         <h3 class="font-bold text-lg mb-4">資產分佈</h3>
-                        <div class="h-64 relative"><canvas id="teacherAssetChart"></canvas></div>
+                        <div class="h-64 relative">
+                            <canvas id="teacherAssetChart"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -571,7 +578,6 @@
                         if (docSnap.exists()) {
                             const remoteData = docSnap.data();
                             if(!remoteData.groups) remoteData.groups = JSON.parse(JSON.stringify(defaultGroups));
-                            // 確保投資物件結構完整 (防止舊資料報錯)
                             remoteData.groups.forEach(g => {
                                 if(!g.investment) g.investment = { savings: 25000, etf: 25000, stocks: 25000, entrepreneurship: 25000 };
                             });
@@ -815,14 +821,9 @@
                                 type: 'bar',
                                 data: {
                                     labels: sessionData.value.groups.map(g => g.name),
-                                    datasets: [
-                                        { label: '儲蓄', data: sessionData.value.groups.map(g => g.investment.savings), backgroundColor: '#06D6A0', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
-                                        { label: 'ETF', data: sessionData.value.groups.map(g => g.investment.etf), backgroundColor: '#118AB2', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
-                                        { label: '股票', data: sessionData.value.groups.map(g => g.investment.stocks), backgroundColor: '#FFD166', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
-                                        { label: '創業', data: sessionData.value.groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF476F', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
-                                    ]
+                                    datasets: [{ label: '總資產', data: sessionData.value.groups.map(g => g.totalAssets), backgroundColor: '#118AB2', borderWidth: 2, borderColor: '#073B4C' }]
                                 },
-                                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+                                options: { responsive: true, maintainAspectRatio: false }
                             });
                         }
                     }
@@ -891,7 +892,7 @@
                                 const labelSuffix = hasFailed ? " (風險爆發)" : ` (年化 ${(weightedReturn * 100).toFixed(1)}%)`;
 
                                 return {
-                                    label: `No.${sorted.findIndex(s=>s.id===g.id)+1} ${g.name}` + labelSuffix,
+                                    label: `No.${rank} ${g.name}` + labelSuffix,
                                     data: data,
                                     borderColor: distinctColor,
                                     backgroundColor: distinctColor,
