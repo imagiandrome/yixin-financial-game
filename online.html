@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 修改標題：加入雲端 Emoji -->
     <title>我是大富翁 ☁️</title>
     
     <!-- ★★★ 自訂 Icon (Money Emoji) ★★★ -->
@@ -25,9 +24,7 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        // 中文使用系統預設
                         sans: ['"Segoe UI"', '"Microsoft JhengHei"', 'sans-serif'],
-                        // 標題英文數字保留可愛風格
                         display: ['"Fredoka"', 'cursive'],
                     },
                     colors: {
@@ -120,6 +117,9 @@
         <h2 class="text-xl font-bold text-retro-dark mb-2">正在連線到雲端...</h2>
         <i class="fa-solid fa-circle-notch fa-spin text-3xl text-retro-blue"></i>
         <p class="text-gray-400 text-sm mt-4 font-bold">Connecting...</p>
+        <button onclick="location.reload()" class="mt-8 text-xs text-retro-red underline cursor-pointer">
+            太久沒反應？點此重新整理
+        </button>
     </div>
 
     <div id="app" v-cloak class="min-h-screen flex flex-col">
@@ -197,10 +197,11 @@
                 <i class="fa-solid fa-people-group mr-2"></i> 請選擇你的組別：
             </h3>
             
+            <!-- 資料載入中或壞掉時的提示 -->
             <div v-if="!sessionData.groups || sessionData.groups.length === 0" class="card-retro p-8 text-center bg-white">
                 <i class="fa-solid fa-triangle-exclamation text-4xl mb-4 text-retro-yellow"></i><br>
                 <span class="font-bold text-lg">等待老師建立遊戲資料...</span><br>
-                <span class="text-xs text-retro-red mt-2 block font-bold">(請老師按後台的「重置」修復資料)</span>
+                <span class="text-xs text-retro-red mt-2 block font-bold">(如果老師已建立，請老師按後台的「修復資料」)</span>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full max-w-4xl">
@@ -448,7 +449,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ============================================================
-        // ⚠️ 您提供的 Config 已填入
+        // ⚠️ 您提供的 Firebase Config (已直接填入)
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyBl_7bBubA98S9RYSO_wR4PQdPiN9DT_aU",
@@ -544,9 +545,14 @@
                         if (docSnap.exists()) {
                             const remoteData = docSnap.data();
                             if(!remoteData.groups) remoteData.groups = JSON.parse(JSON.stringify(defaultGroups));
+                            // 確保投資物件結構完整 (防止舊資料報錯)
                             remoteData.groups.forEach(g => {
                                 if(!g.investment) g.investment = { savings: 25000, etf: 25000, stocks: 25000, entrepreneurship: 25000 };
                             });
+                            
+                            // 確保 drawnCardIndices 存在
+                            if(!remoteData.drawnCardIndices) remoteData.drawnCardIndices = [];
+
                             sessionData.value = remoteData;
                             
                             if(view.value.startsWith('student') && myGroupIndex.value === null) {
@@ -666,6 +672,7 @@
 
                 const drawFateCard = async () => {
                     if (isProcessing.value) return;
+                    
                     // 確保 drawnCardIndices 是陣列
                     const drawn = sessionData.value.drawnCardIndices || [];
                     const availableIndices = FATE_CARDS.map((_, i) => i).filter(i => !drawn.includes(i));
@@ -764,12 +771,10 @@
 
                 let teacherAssetChartInstance = null;
                 let teacherLineChartInstance = null;
-
                 const updateCharts = () => {
                     if (view.value !== 'teacher') return;
 
-                    // Bar Chart (Stage 2)
-                    if (sessionData.value.stage === 2) {
+                    if (stage.value === 2) {
                         const ctx = document.getElementById('teacherAssetChart');
                         if (ctx) {
                             if (teacherAssetChartInstance) teacherAssetChartInstance.destroy();
@@ -777,34 +782,29 @@
                                 type: 'bar',
                                 data: {
                                     labels: sessionData.value.groups.map(g => g.name),
-                                    datasets: [
-                                        { label: '儲蓄', data: sessionData.value.groups.map(g => g.investment.savings), backgroundColor: '#06D6A0', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
-                                        { label: 'ETF', data: sessionData.value.groups.map(g => g.investment.etf), backgroundColor: '#118AB2', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
-                                        { label: '股票', data: sessionData.value.groups.map(g => g.investment.stocks), backgroundColor: '#FFD166', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
-                                        { label: '創業', data: sessionData.value.groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF476F', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
-                                    ]
+                                    datasets: [{ label: '總資產', data: sessionData.value.groups.map(g => g.totalAssets), backgroundColor: '#118AB2', borderWidth: 2, borderColor: '#073B4C' }]
                                 },
-                                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+                                options: { responsive: true, maintainAspectRatio: false }
                             });
                         }
                     }
-
-                    // Line Chart (Stage 3) - 同步單機版邏輯
-                    if (sessionData.value.stage === 3) {
+                    
+                    if (stage.value === 3) {
                         const ctx = document.getElementById('teacherLineChart');
                         if (ctx) {
                             if (teacherLineChartInstance) teacherLineChartInstance.destroy();
                             
-                            const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
-                            const top3Ids = sorted.slice(0, 3).map(g => g.id);
-                            const bottom3Ids = sorted.slice(-3).map(g => g.id);
-                            const targets = sessionData.value.groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
+                             const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
+                             // Top 3 and Bottom 3
+                             const top3Ids = sorted.slice(0, 3).map(g => g.id);
+                             const bottom3Ids = sorted.slice(-3).map(g => g.id);
+                             const targets = sorted.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
 
-                            const years = Array.from({length: 21}, (_, i) => `${i}年`);
-                            const datasets = targets.map(g => {
-                                const total = g.totalAssets || 1;
+                             const years = Array.from({length: 21}, (_, i) => `${i}年`);
+                             const datasets = targets.map(g => {
+                                const total = g.totalAssets;
                                 const inv = g.investment;
-                                // 加權年化報酬率
+                                // Weighted return
                                 const weightedReturn = (
                                     (inv.savings * 0.02) + 
                                     (inv.etf * 0.06) + 
@@ -814,7 +814,7 @@
                                 
                                 const baseRate = 1 + weightedReturn;
                                 
-                                // 風險邏輯：創業 > 30% 且 亂數種子 < 30 (30%機率)
+                                // Risk logic
                                 const entrepreneurialRatio = inv.entrepreneurship / total;
                                 let hasFailed = false;
                                 const seed = (g.id * 11) % 100; 
@@ -827,7 +827,6 @@
                                 
                                 for(let y=1; y<=20; y++) {
                                     if (hasFailed && y >= 10) {
-                                        // 第10年開始崩盤，每年縮水2%
                                         currentAsset = (inv.savings + inv.etf + inv.stocks) * Math.pow(0.98, y - 10);
                                         currentAsset = Math.max(currentAsset, total * 0.1);
                                     } else {
@@ -837,18 +836,24 @@
                                 }
                                 
                                 const isTop = top3Ids.includes(g.id);
+                                const rank = sorted.findIndex(s => s.id === g.id) + 1;
                                 
                                 let distinctColor;
                                 if (isTop) {
-                                    distinctColor = '#06D6A0'; // 綠色系
+                                    if(rank === 1) distinctColor = '#06D6A0'; 
+                                    else if(rank === 2) distinctColor = '#118AB2';
+                                    else distinctColor = '#FFD166';
                                 } else {
-                                    distinctColor = '#EF476F'; // 紅色系
+                                    const bottomIndex = bottom3Ids.indexOf(g.id); 
+                                    if(bottomIndex === 2) distinctColor = '#073B4C';
+                                    else if(bottomIndex === 1) distinctColor = '#EF476F';
+                                    else distinctColor = '#FF8FAB';
                                 }
                                 
                                 const labelSuffix = hasFailed ? " (風險爆發)" : ` (年化 ${(weightedReturn * 100).toFixed(1)}%)`;
 
                                 return {
-                                    label: `No.${sorted.findIndex(s=>s.id===g.id)+1} ${g.name}` + labelSuffix,
+                                    label: `No.${rank} ${g.name}` + labelSuffix,
                                     data: data,
                                     borderColor: distinctColor,
                                     backgroundColor: distinctColor,
@@ -857,7 +862,7 @@
                                     fill: false,
                                     tension: 0.4
                                 };
-                            });
+                             });
 
                             teacherLineChartInstance = new Chart(ctx, {
                                 type: 'line',
