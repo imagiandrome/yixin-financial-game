@@ -6,8 +6,8 @@
     <!-- 修改標題：加入雲端 Emoji -->
     <title>我是大富翁 ☁️</title>
     
-    <!-- ★★★ 自訂 Icon ★★★ -->
-    <link rel="icon" type="image/png" href="icon.png">
+    <!-- ★★★ 自訂 Icon (Money Emoji) ★★★ -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -191,10 +191,7 @@
         <!-- 2. 學生選組大廳 -->
         <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh] bg-retro-blue/10 rounded-3xl my-4 border-2 border-retro-dark border-dashed">
             <h2 class="font-display text-3xl font-bold mb-2 text-retro-dark">👋 歡迎加入！</h2>
-            <div class="inline-flex items-center bg-white px-4 py-2 rounded-full shadow-retro-sm border-2 border-retro-dark text-sm font-mono mb-8">
-                <span class="text-gray-400 mr-2 font-bold">ROOM:</span>
-                <span class="font-bold text-retro-blue text-lg">{{ sessionCode }}</span>
-            </div>
+            <p class="text-gray-500 mb-8 text-center">房間代碼: <span class="font-bold text-blue-600">{{ sessionCode }}</span></p>
             
             <h3 class="text-lg font-bold mb-6 text-retro-dark flex items-center">
                 <i class="fa-solid fa-people-group mr-2"></i> 請選擇你的組別：
@@ -412,7 +409,7 @@
                 </div>
 
                 <div class="space-y-6">
-                    <div v-for="(val, key) in myGroup.investment" :key="key">
+                    <div v-for="(val, key) in myInvestment" :key="key">
                         <div class="flex justify-between text-sm mb-1">
                             <span class="font-bold text-retro-dark">{{ translate(key) }}</span>
                             <span class="font-mono font-bold text-gray-500">{{ formatMoney(val) }}</span>
@@ -450,7 +447,9 @@
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // 您的 Firebase Config
+        // ============================================================
+        // ⚠️ 您提供的 Config 已填入
+        // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyBl_7bBubA98S9RYSO_wR4PQdPiN9DT_aU",
             authDomain: "yixin-monopoly-game.firebaseapp.com",
@@ -667,7 +666,10 @@
 
                 const drawFateCard = async () => {
                     if (isProcessing.value) return;
-                    const availableIndices = FATE_CARDS.map((_, i) => i).filter(i => !sessionData.value.drawnCardIndices.includes(i));
+                    // 確保 drawnCardIndices 是陣列
+                    const drawn = sessionData.value.drawnCardIndices || [];
+                    const availableIndices = FATE_CARDS.map((_, i) => i).filter(i => !drawn.includes(i));
+                    
                     if (availableIndices.length === 0) return alert("卡牌已用盡");
 
                     isProcessing.value = true; 
@@ -689,7 +691,7 @@
                     await updateDoc(docRef, {
                         groups: newGroups,
                         lastDrawnCard: card.title,
-                        drawnCardIndices: [...sessionData.value.drawnCardIndices, idx],
+                        drawnCardIndices: [...drawn, idx],
                         round: sessionData.value.round + 1
                     });
 
@@ -725,7 +727,7 @@
                     return [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
                 });
 
-                const isCardDeckEmpty = computed(() => sessionData.value.drawnCardIndices.length >= FATE_CARDS.length);
+                const isCardDeckEmpty = computed(() => (sessionData.value.drawnCardIndices || []).length >= FATE_CARDS.length);
                 const formatMoney = (val) => new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 }).format(val);
                 const translate = (key) => {
                     const map = { food: '食物', transport: '交通', entertainment: '娛樂', education: '學習', family: '家庭', savings: '定存', etf: 'ETF', stocks: '股票', entrepreneurship: '創業' };
@@ -762,10 +764,12 @@
 
                 let teacherAssetChartInstance = null;
                 let teacherLineChartInstance = null;
+
                 const updateCharts = () => {
                     if (view.value !== 'teacher') return;
 
-                    if (stage.value === 2) {
+                    // Bar Chart (Stage 2)
+                    if (sessionData.value.stage === 2) {
                         const ctx = document.getElementById('teacherAssetChart');
                         if (ctx) {
                             if (teacherAssetChartInstance) teacherAssetChartInstance.destroy();
@@ -773,27 +777,34 @@
                                 type: 'bar',
                                 data: {
                                     labels: sessionData.value.groups.map(g => g.name),
-                                    datasets: [{ label: '總資產', data: sessionData.value.groups.map(g => g.totalAssets), backgroundColor: '#118AB2', borderWidth: 2, borderColor: '#073B4C' }]
+                                    datasets: [
+                                        { label: '儲蓄', data: sessionData.value.groups.map(g => g.investment.savings), backgroundColor: '#06D6A0', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
+                                        { label: 'ETF', data: sessionData.value.groups.map(g => g.investment.etf), backgroundColor: '#118AB2', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
+                                        { label: '股票', data: sessionData.value.groups.map(g => g.investment.stocks), backgroundColor: '#FFD166', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
+                                        { label: '創業', data: sessionData.value.groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF476F', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
+                                    ]
                                 },
-                                options: { responsive: true, maintainAspectRatio: false }
+                                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
                             });
                         }
                     }
-                    
-                    if (stage.value === 3) {
+
+                    // Line Chart (Stage 3) - 同步單機版邏輯
+                    if (sessionData.value.stage === 3) {
                         const ctx = document.getElementById('teacherLineChart');
                         if (ctx) {
                             if (teacherLineChartInstance) teacherLineChartInstance.destroy();
                             
-                             const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
-                             const top3Ids = sorted.slice(0, 3).map(g => g.id);
-                             const bottom3Ids = sorted.slice(-3).map(g => g.id);
-                             const targets = sessionData.value.groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
+                            const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
+                            const top3Ids = sorted.slice(0, 3).map(g => g.id);
+                            const bottom3Ids = sorted.slice(-3).map(g => g.id);
+                            const targets = sessionData.value.groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
 
-                             const years = Array.from({length: 21}, (_, i) => `${i}年`);
-                             const datasets = targets.map(g => {
-                                const total = g.totalAssets;
+                            const years = Array.from({length: 21}, (_, i) => `${i}年`);
+                            const datasets = targets.map(g => {
+                                const total = g.totalAssets || 1;
                                 const inv = g.investment;
+                                // 加權年化報酬率
                                 const weightedReturn = (
                                     (inv.savings * 0.02) + 
                                     (inv.etf * 0.06) + 
@@ -803,6 +814,7 @@
                                 
                                 const baseRate = 1 + weightedReturn;
                                 
+                                // 風險邏輯：創業 > 30% 且 亂數種子 < 30 (30%機率)
                                 const entrepreneurialRatio = inv.entrepreneurship / total;
                                 let hasFailed = false;
                                 const seed = (g.id * 11) % 100; 
@@ -815,6 +827,7 @@
                                 
                                 for(let y=1; y<=20; y++) {
                                     if (hasFailed && y >= 10) {
+                                        // 第10年開始崩盤，每年縮水2%
                                         currentAsset = (inv.savings + inv.etf + inv.stocks) * Math.pow(0.98, y - 10);
                                         currentAsset = Math.max(currentAsset, total * 0.1);
                                     } else {
@@ -824,24 +837,18 @@
                                 }
                                 
                                 const isTop = top3Ids.includes(g.id);
-                                const rank = sorted.findIndex(s => s.id === g.id) + 1;
                                 
                                 let distinctColor;
                                 if (isTop) {
-                                    if(rank === 1) distinctColor = '#06D6A0'; 
-                                    else if(rank === 2) distinctColor = '#118AB2';
-                                    else distinctColor = '#FFD166';
+                                    distinctColor = '#06D6A0'; // 綠色系
                                 } else {
-                                    const bottomIndex = bottom3Ids.indexOf(g.id); 
-                                    if(bottomIndex === 2) distinctColor = '#073B4C';
-                                    else if(bottomIndex === 1) distinctColor = '#EF476F';
-                                    else distinctColor = '#FF8FAB';
+                                    distinctColor = '#EF476F'; // 紅色系
                                 }
                                 
                                 const labelSuffix = hasFailed ? " (風險爆發)" : ` (年化 ${(weightedReturn * 100).toFixed(1)}%)`;
 
                                 return {
-                                    label: `No.${rank} ${g.name}` + labelSuffix,
+                                    label: `No.${sorted.findIndex(s=>s.id===g.id)+1} ${g.name}` + labelSuffix,
                                     data: data,
                                     borderColor: distinctColor,
                                     backgroundColor: distinctColor,
@@ -850,7 +857,7 @@
                                     fill: false,
                                     tension: 0.4
                                 };
-                             });
+                            });
 
                             teacherLineChartInstance = new Chart(ctx, {
                                 type: 'line',
