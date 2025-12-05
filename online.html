@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一新中學理財 v3.2 (強制選組版)</title>
+    <title>一新中學理財 v3.3 (除錯版)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,7 +50,7 @@
         <nav class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-50">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-2 font-bold text-lg">
-                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.2</span>
+                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.3</span>
                     <span class="hidden md:inline">一新中學理財 (雲端版)</span>
                     <div class="flex items-center ml-4 text-xs font-normal">
                         <span class="status-dot" :class="dbConnected ? 'status-online' : 'status-offline'"></span>
@@ -92,17 +92,14 @@
                     </button>
                 </div>
                 
-                <!-- 強制清除按鈕 -->
-                <div class="mt-8 text-center">
-                    <button @click="forceClear" class="text-xs text-gray-400 underline hover:text-red-500">
-                        按鈕沒反應？點此重置系統
-                    </button>
+                <div class="mt-8 text-center text-xs text-gray-300">
+                    版本 v3.3 | 強制重置模式
                 </div>
             </div>
         </div>
 
         <!-- 2. 學生選組大廳 (強制進入此步驟) -->
-        <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh]">
+        <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh] bg-blue-50">
             <h2 class="text-2xl font-bold mb-2 text-center">👋 歡迎加入！</h2>
             <p class="text-gray-500 mb-8 text-center">房間代碼: <span class="font-bold text-blue-600">{{ sessionCode }}</span></p>
             
@@ -117,13 +114,16 @@
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
                 <button v-for="(g, idx) in sessionData.groups" :key="idx" 
                     @click="confirmGroupSelection(idx)"
-                    class="p-4 rounded-xl border-2 hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600 transition text-lg font-bold text-slate-600 border-slate-200 shadow-sm bg-white"
-                    :class="myGroupIndex === idx ? 'border-blue-500 bg-blue-50 text-blue-600 ring-2 ring-blue-200' : ''">
+                    class="p-4 rounded-xl border-2 hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600 transition text-lg font-bold text-slate-600 border-slate-200 shadow-sm bg-white">
                     {{ g.name }}
                 </button>
             </div>
             
-            <button @click="logout" class="mt-12 text-slate-400 underline">返回首頁</button>
+            <div class="mt-12 p-4 bg-slate-200 rounded text-xs text-slate-500 font-mono">
+                [DEBUG] Current Group Index: {{ myGroupIndex === null ? 'NULL (Correct)' : myGroupIndex }}
+            </div>
+            
+            <button @click="logout" class="mt-4 text-slate-400 underline">返回首頁</button>
         </div>
 
         <!-- 3. 老師控制台 -->
@@ -413,7 +413,7 @@
                         db = getFirestore(app);
                         dbConnected.value = true;
 
-                        // V3.2 絕殺：強制清除記憶
+                        // V3.3 絕殺：強制清除記憶
                         localStorage.removeItem('yixinGroup'); 
                         
                         // 我們也不再自動連線 session，只幫忙填代碼
@@ -499,8 +499,10 @@
 
                         if (docSnap.exists()) {
                             sessionCode.value = formattedCode;
+                            // 學生登入絕殺：強制歸零組別，確保不會跳過 lobby
+                            myGroupIndex.value = null;
+                            
                             connectToSession(formattedCode);
-                            // 學生連線成功後，強制進入選組大廳
                             view.value = 'student-lobby';
                             localStorage.setItem('yixinSession', formattedCode);
                         } else {
