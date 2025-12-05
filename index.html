@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我是大富翁 (單機版)</title>
+    <!-- 修改標題：使用電腦 Emoji -->
+    <title>一新中學理財 💻</title>
     
     <!-- ★★★ 設定自訂 Icon ★★★ -->
     <link rel="icon" type="image/png" href="icon.png">
@@ -64,7 +65,7 @@
             <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-2">
                 <div class="flex items-center space-x-2 font-bold text-xl text-emerald-600 tracking-wide cursor-pointer" @click="view = 'welcome'">
                     <i class="fa-solid fa-leaf text-emerald-500"></i>
-                    <span>我是大富翁 <span class="text-slate-400 text-sm font-normal ml-1 hidden sm:inline">| 單機版</span></span>
+                    <span>一新中學理財 <span class="text-slate-400 text-sm font-normal ml-1 hidden sm:inline">| 💻 單機版</span></span>
                 </div>
                 
                 <!-- 快速切換視角按鈕 -->
@@ -94,7 +95,7 @@
             <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-fade-in">
                 <div class="text-center space-y-4">
                     <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold tracking-wider">FINANCIAL LITERACY WORKSHOP</span>
-                    <h1 class="text-4xl md:text-6xl font-bold text-slate-800 tracking-tight">我是大富翁 <span class="text-emerald-500">Offline</span></h1>
+                    <h1 class="text-4xl md:text-6xl font-bold text-slate-800 tracking-tight">我是大富翁 <span class="text-emerald-500">Offline 💻</span></h1>
                     <p class="text-slate-500">單機練習模式：可自由切換「個人練習」與「市場模擬」視角。</p>
                 </div>
                 
@@ -497,13 +498,9 @@
                         const ctx = document.getElementById('teacherLineChart');
                         if (ctx) {
                             if (teacherLineChartInstance) teacherLineChartInstance.destroy();
-                            
+                            // Generate simulation data... (Same logic as online version but fully local)
                              const sorted = [...simulatedGroups.value].sort((a, b) => b.totalAssets - a.totalAssets);
-                             // Top 3 and Bottom 3
-                             const top3Ids = sorted.slice(0, 3).map(g => g.id);
-                             const bottom3Ids = sorted.slice(-3).map(g => g.id);
-                             const targets = sorted.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
-
+                             const targets = sorted.slice(0, 3).concat(sorted.slice(-3));
                              const years = Array.from({length: 21}, (_, i) => `${i}年`);
                              const datasets = targets.map(g => {
                                 const total = g.totalAssets;
@@ -518,7 +515,7 @@
                                 
                                 const baseRate = 1 + weightedReturn;
                                 
-                                // Risk logic
+                                // Risk logic (Same as Online)
                                 const entrepreneurialRatio = inv.entrepreneurship / total;
                                 let hasFailed = false;
                                 const seed = (g.id * 11) % 100; 
