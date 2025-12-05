@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: 只保留 Fredoka 用於英文數字，移除 Noto Sans TC 以確保使用系統中文字體 -->
+    <!-- Google Fonts: Fredoka 僅用於英文和數字 -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
 
     <script>
@@ -97,11 +97,11 @@
         
         <!-- 導航列 (加入快速切換按鈕) -->
         <nav class="bg-white border-b-2 border-retro-dark sticky top-0 z-50 px-4 py-3 shadow-sm">
-            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
+            <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-2">
                 <div class="flex items-center gap-2 font-bold text-xl tracking-wide cursor-pointer" @click="view = 'welcome'">
                     <div class="bg-retro-yellow w-10 h-10 rounded-full border-2 border-retro-dark flex items-center justify-center text-xl shadow-retro-sm">💰</div>
-                    <!-- 標題使用 display 字體 (可愛風)，副標題使用 sans (系統字體) -->
-                    <span class="font-display text-retro-dark">我是大富翁 <span class="text-gray-400 text-sm font-sans font-bold ml-1">| 💻 單機版</span></span>
+                    <!-- 修正：中文標題強制使用 sans (微軟正黑體) -->
+                    <span class="font-sans text-retro-dark tracking-wider">我是大富翁 <span class="text-gray-400 text-sm font-sans font-bold ml-1">| 💻 單機版</span></span>
                 </div>
                 
                 <div class="flex gap-2 text-sm font-bold font-sans" v-if="view !== 'welcome'">
@@ -127,31 +127,34 @@
             
             <!-- 1. 歡迎畫面 -->
             <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center w-full max-w-4xl animate-fade-in">
-                <div class="text-center mb-8">
-                    <span class="bg-retro-dark text-white px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase mb-2 inline-block font-display">Financial Game</span>
-                    <h1 class="font-display text-5xl md:text-7xl font-bold text-retro-dark drop-shadow-sm">我是大富翁 <span class="text-retro-green">Offline 💻</span></h1>
-                    <p class="text-gray-500 mt-4 font-bold font-sans">單機練習模式：自由切換視角，無需連線。</p>
+                <div class="text-center space-y-4">
+                    <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold tracking-wider font-display">FINANCIAL LITERACY WORKSHOP</span>
+                    <!-- 修正：中文標題強制使用 sans，只有英文使用 display (Fredoka) -->
+                    <h1 class="text-5xl md:text-7xl font-bold text-retro-dark drop-shadow-sm"><span class="font-sans tracking-wide">我是大富翁</span> <span class="font-display text-retro-green">Offline 💻</span></h1>
+                    <p class="text-slate-500 mt-4 font-bold font-sans">單機練習模式：自由切換視角，無需連線。</p>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-3xl mt-8">
                     <button @click="view = 'student'" class="card-retro p-8 hover:bg-retro-yellow transition group text-left relative overflow-hidden">
                         <div class="absolute -right-4 -top-4 text-9xl opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-mobile-screen"></i></div>
-                        <h3 class="font-display text-3xl font-bold mb-2">個人練習</h3>
+                        <h3 class="text-3xl font-bold mb-2 font-sans">個人練習</h3>
                         <p class="text-sm opacity-70 font-bold font-display">STUDENT MODE</p>
                         <p class="mt-4 text-sm font-sans">操作預算與投資，計算個人最終資產。</p>
                     </button>
 
                     <button @click="view = 'teacher'" class="card-retro p-8 hover:bg-retro-green hover:text-white transition group text-left relative overflow-hidden">
                         <div class="absolute -right-4 -top-4 text-9xl opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-chart-simple"></i></div>
-                        <h3 class="font-display text-3xl font-bold mb-2">市場模擬</h3>
+                        <h3 class="text-3xl font-bold mb-2 font-sans">市場模擬</h3>
                         <p class="text-sm opacity-70 font-bold font-display">SIMULATION VIEW</p>
                         <p class="mt-4 text-sm font-sans">觀看 13 組模擬數據與長期複利變化。</p>
                     </button>
                 </div>
                 
-                <button @click="hardReset" class="mt-12 text-xs text-gray-400 hover:text-retro-red border-b-2 border-transparent hover:border-retro-red font-bold transition font-sans">
-                    清除暫存 (Reset)
-                </button>
+                <div class="mt-12">
+                    <button @click="hardReset" class="text-xs text-slate-400 hover:text-retro-red border-b-2 border-transparent hover:border-retro-red font-bold transition font-sans">
+                        清除暫存 (Reset)
+                    </button>
+                </div>
             </div>
 
             <!-- 2. 老師演示模式 (模擬數據) -->
@@ -520,7 +523,7 @@
                                 
                                 const baseRate = 1 + weightedReturn;
                                 
-                                // Risk logic (Same as Online)
+                                // Risk logic
                                 const entrepreneurialRatio = inv.entrepreneurship / total;
                                 let hasFailed = false;
                                 const seed = (g.id * 11) % 100; 
@@ -533,6 +536,7 @@
                                 
                                 for(let y=1; y<=20; y++) {
                                     if (hasFailed && y >= 10) {
+                                        // 第10年開始崩盤，每年縮水2%
                                         currentAsset = (inv.savings + inv.etf + inv.stocks) * Math.pow(0.98, y - 10);
                                         currentAsset = Math.max(currentAsset, total * 0.1);
                                     } else {
@@ -542,24 +546,18 @@
                                 }
                                 
                                 const isTop = top3Ids.includes(g.id);
-                                const rank = sorted.findIndex(s => s.id === g.id) + 1;
                                 
                                 let distinctColor;
                                 if (isTop) {
-                                    if(rank === 1) distinctColor = '#06D6A0'; 
-                                    else if(rank === 2) distinctColor = '#118AB2';
-                                    else distinctColor = '#FFD166';
+                                    distinctColor = '#06D6A0'; // 綠色系
                                 } else {
-                                    const bottomIndex = bottom3Ids.indexOf(g.id); 
-                                    if(bottomIndex === 2) distinctColor = '#073B4C';
-                                    else if(bottomIndex === 1) distinctColor = '#EF476F';
-                                    else distinctColor = '#FF8FAB';
+                                    distinctColor = '#EF476F'; // 紅色系
                                 }
                                 
                                 const labelSuffix = hasFailed ? " (風險爆發)" : ` (年化 ${(weightedReturn * 100).toFixed(1)}%)`;
 
                                 return {
-                                    label: `No.${rank} ${g.name}` + labelSuffix,
+                                    label: `No.${sorted.findIndex(s=>s.id===g.id)+1} ${g.name}` + labelSuffix,
                                     data: data,
                                     borderColor: distinctColor,
                                     backgroundColor: distinctColor,
