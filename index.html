@@ -6,8 +6,8 @@
     <!-- 修改標題：加入電腦 Emoji -->
     <title>我是大富翁 💻</title>
     
-    <!-- Icon -->
-    <link rel="icon" type="image/png" href="icon.png">
+    <!-- ★★★ 設定自訂 Icon (Money Emoji) ★★★ -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,8 +17,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: 只保留 Fredoka 用於英文數字，移除 Noto Sans TC 以確保使用系統中文字體 -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -26,7 +26,7 @@
                 extend: {
                     fontFamily: {
                         // 中文使用系統預設 (微軟正黑體等)，確保清晰熟悉
-                        sans: ['"Segoe UI"', '"Microsoft JhengHei"', 'sans-serif'],
+                        sans: ['"Microsoft JhengHei"', '"Segoe UI"', 'sans-serif'],
                         // 標題英文數字保留可愛風格
                         display: ['"Fredoka"', 'cursive'],
                     },
@@ -52,8 +52,8 @@
 
     <style>
         body { 
-            /* 確保全域字體設定正確 */
-            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            /* 確保全域字體設定正確，優先使用微軟正黑體 */
+            font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif;
             background-color: #FFF8E7;
             background-image: radial-gradient(#FFD166 2px, transparent 2px);
             background-size: 30px 30px;
@@ -95,6 +95,7 @@
 
     <div id="app" v-cloak class="min-h-screen flex flex-col">
         
+        <!-- 導航列 (加入快速切換按鈕) -->
         <nav class="bg-white border-b-2 border-retro-dark sticky top-0 z-50 px-4 py-3 shadow-sm">
             <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
                 <div class="flex items-center gap-2 font-bold text-xl tracking-wide cursor-pointer" @click="view = 'welcome'">
@@ -121,6 +122,7 @@
             </div>
         </nav>
 
+        <!-- 主要內容區 -->
         <main class="container mx-auto p-4 md:p-8 flex-grow flex flex-col items-center justify-center">
             
             <!-- 1. 歡迎畫面 -->
@@ -167,7 +169,7 @@
                         <button v-for="s in [1, 2, 3]" :key="s" @click="setStage(s)" 
                             :class="stage === s ? 'bg-retro-blue text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'"
                             class="px-4 py-1.5 rounded-md font-bold transition text-sm">
-                            {{ ['1.預算', '2.投資', '3.總結'][s-1] }}
+                            {{ ['1. 預算', '2. 投資', '3. 總結'][s-1] }}
                         </button>
                     </div>
                 </div>
@@ -499,6 +501,7 @@
                             if (teacherLineChartInstance) teacherLineChartInstance.destroy();
                             
                              const sorted = [...simulatedGroups.value].sort((a, b) => b.totalAssets - a.totalAssets);
+                             // Top 3 and Bottom 3
                              const top3Ids = sorted.slice(0, 3).map(g => g.id);
                              const bottom3Ids = sorted.slice(-3).map(g => g.id);
                              const targets = sorted.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
@@ -507,6 +510,7 @@
                              const datasets = targets.map(g => {
                                 const total = g.totalAssets;
                                 const inv = g.investment;
+                                // Weighted return
                                 const weightedReturn = (
                                     (inv.savings * 0.02) + 
                                     (inv.etf * 0.06) + 
@@ -516,6 +520,7 @@
                                 
                                 const baseRate = 1 + weightedReturn;
                                 
+                                // Risk logic (Same as Online)
                                 const entrepreneurialRatio = inv.entrepreneurship / total;
                                 let hasFailed = false;
                                 const seed = (g.id * 11) % 100; 
