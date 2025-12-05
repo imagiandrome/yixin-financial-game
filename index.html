@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我是大富翁 (單機版)</title>
+    <!-- 修改標題：加入電腦 Emoji -->
+    <title>我是大富翁 💻</title>
     
     <!-- Icon -->
     <link rel="icon" type="image/png" href="icon.png">
@@ -16,8 +17,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: 只保留 Fredoka 用於裝飾數字和英文，中文使用系統字體 -->
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -99,7 +100,7 @@
                 <div class="flex items-center gap-2 font-bold text-xl tracking-wide cursor-pointer" @click="view = 'welcome'">
                     <div class="bg-retro-yellow w-10 h-10 rounded-full border-2 border-retro-dark flex items-center justify-center text-xl shadow-retro-sm">💰</div>
                     <!-- 標題使用 display 字體 (可愛風)，副標題使用 sans (系統字體) -->
-                    <span class="font-display text-retro-dark">我是大富翁 <span class="text-gray-400 text-sm font-sans font-bold ml-1">| 單機版</span></span>
+                    <span class="font-display text-retro-dark">我是大富翁 <span class="text-gray-400 text-sm font-sans font-bold ml-1">| 💻 單機版</span></span>
                 </div>
                 
                 <div class="flex gap-2 text-sm font-bold font-sans" v-if="view !== 'welcome'">
@@ -126,7 +127,7 @@
             <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center w-full max-w-4xl animate-fade-in">
                 <div class="text-center mb-8">
                     <span class="bg-retro-dark text-white px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase mb-2 inline-block font-display">Financial Game</span>
-                    <h1 class="font-display text-5xl md:text-7xl font-bold text-retro-dark drop-shadow-sm">我是大富翁 <span class="text-retro-green">Offline</span></h1>
+                    <h1 class="font-display text-5xl md:text-7xl font-bold text-retro-dark drop-shadow-sm">我是大富翁 <span class="text-retro-green">Offline 💻</span></h1>
                     <p class="text-gray-500 mt-4 font-bold font-sans">單機練習模式：自由切換視角，無需連線。</p>
                 </div>
                 
