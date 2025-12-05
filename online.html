@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一新中學理財 v3.6 (絲滑切換版)</title>
+    <title>一新中學理財 v3.8 (自訂圖示版)</title>
     
+    <!-- ★★★ 設定自訂 Icon ★★★ -->
+    <!-- 請確保您已將圖片命名為 icon.jpg 並上傳到 GitHub -->
+    <link rel="icon" type="image/jpeg" href="icon.jpg">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Vue 3 -->
@@ -50,7 +54,7 @@
         <nav class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-50">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-2 font-bold text-lg">
-                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.6</span>
+                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.8</span>
                     <span class="hidden md:inline">一新中學理財 (雲端版)</span>
                     <div class="flex items-center ml-4 text-xs font-normal">
                         <span class="status-dot" :class="dbConnected ? 'status-online' : 'status-offline'"></span>
@@ -65,7 +69,7 @@
             </div>
         </nav>
 
-        <!-- 1. 歡迎/登入畫面 -->
+        <!-- 1. 歡迎/登入畫面 (強制停留) -->
         <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-fade-in p-4">
             <h1 class="text-3xl md:text-5xl font-bold text-slate-800 text-center">理財體驗課 <span class="text-blue-600">Online</span></h1>
             
@@ -92,6 +96,7 @@
                     </button>
                 </div>
                 
+                <!-- 強制清除按鈕 -->
                 <div class="mt-8 text-center">
                     <button @click="forceClear" class="text-xs text-gray-400 underline hover:text-red-500">
                         按鈕沒反應？點此重置系統
@@ -107,16 +112,18 @@
             
             <h3 class="text-lg font-bold mb-4">請點擊選擇你的組別：</h3>
             
+            <!-- 資料載入中或壞掉時的提示 -->
             <div v-if="!sessionData.groups || sessionData.groups.length === 0" class="text-center text-gray-500 p-8 border-2 border-dashed border-gray-300 rounded-xl">
-                <i class="fa-solid fa-spinner fa-spin text-3xl mb-2"></i><br>
-                正在從雲端讀取小組資料...<br>
-                <span class="text-xs">(若卡在此處，請確認老師已建立房間)</span>
+                <i class="fa-solid fa-triangle-exclamation text-3xl mb-2 text-yellow-500"></i><br>
+                等待老師建立遊戲資料...<br>
+                <span class="text-xs text-red-500">(如果老師已建立，請老師按「重置」修復資料)</span>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
                 <button v-for="(g, idx) in sessionData.groups" :key="idx" 
                     @click="confirmGroupSelection(idx)"
-                    class="p-4 rounded-xl border-2 hover:bg-yellow-100 hover:border-yellow-500 hover:text-yellow-800 transition text-lg font-bold text-slate-600 border-slate-200 shadow-sm bg-white">
+                    class="p-4 rounded-xl border-2 hover:bg-yellow-100 hover:border-yellow-500 hover:text-yellow-800 transition text-lg font-bold text-slate-600 border-slate-200 shadow-sm bg-white"
+                    :class="myGroupIndex === idx ? 'border-blue-500 bg-blue-50 text-blue-600 ring-2 ring-blue-200' : ''">
                     {{ g.name }}
                 </button>
             </div>
@@ -132,19 +139,16 @@
                     <p class="text-sm text-gray-500">代碼: <span class="font-mono font-bold text-blue-600 text-lg">{{ sessionCode }}</span></p>
                 </div>
                 <div class="flex space-x-2">
-                    <!-- v3.6 修正：按鈕增加 isProcessing 狀態，避免誤以為沒反應 -->
                     <button v-for="s in [1, 2, 3]" :key="s" @click="updateStage(s)" 
-                        :disabled="isProcessing"
                         :class="sessionData.stage === s ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'"
-                        class="px-3 py-2 rounded-lg font-bold transition text-xs md:text-sm flex items-center disabled:opacity-50">
-                        <span v-if="isProcessing && targetStage === s" class="mr-1"><i class="fa-solid fa-spinner fa-spin"></i></span>
+                        class="px-3 py-2 rounded-lg font-bold transition text-xs md:text-sm">
                         {{ ['1.預算', '2.投資', '3.總結'][s-1] }}
                     </button>
                 </div>
             </div>
 
             <!-- 控制按鈕 -->
-            <div class="flex flex-wrap gap-3">
+            <div class="flex flex-wrap gap-3 items-center">
                 <button v-if="sessionData.stage === 1" @click="toggleInflation" 
                     :class="sessionData.inflationTriggered ? 'bg-rose-500 text-white' : 'bg-white text-rose-500 border border-rose-500'"
                     class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center">
@@ -161,7 +165,10 @@
                     </span>
                 </button>
                 
-                <button @click="resetGame" class="ml-auto px-4 py-2 text-sm text-gray-400 hover:text-red-500 underline">重置數據</button>
+                <!-- 關鍵修復按鈕 -->
+                <button @click="resetGame" class="ml-auto px-4 py-2 text-sm bg-red-50 text-red-500 border border-red-200 rounded hover:bg-red-100 transition">
+                    ⚠️ 修復/重置所有資料
+                </button>
             </div>
 
             <!-- 數據展示 -->
@@ -207,7 +214,6 @@
                     <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm">
                         <h3 class="font-bold mb-4">資產分佈圖</h3>
                         <div class="h-64 relative">
-                             <!-- 避免圖表因為切換太快而空白 -->
                             <canvas id="teacherAssetChart"></canvas>
                         </div>
                     </div>
@@ -216,7 +222,7 @@
                 <!-- 總結圖表 -->
                 <div v-if="sessionData.stage === 3" class="md:col-span-3 bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="font-bold mb-4 text-center">20 年資產模擬 (前後三名)</h3>
-                    <div class="h-80"><canvas id="teacherLineChart"></canvas></div>
+                    <div class="h-80 relative"><canvas id="teacherLineChart"></canvas></div>
                 </div>
             </div>
         </div>
@@ -250,6 +256,19 @@
                         <div class="text-xl font-mono font-bold" :class="myBalance < 0 ? 'text-red-500' : 'text-green-500'">
                             {{ formatMoney(myBalance) }}
                         </div>
+                    </div>
+                </div>
+
+                <!-- 圓餅圖容器 -->
+                <div class="h-48 relative flex justify-center">
+                    <canvas id="studentPieChart"></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none mt-4">
+                        <span class="font-bold text-sm" :class="myBalance < 0 ? 'text-rose-500' : 'text-slate-600'">
+                            {{ myBalance < 0 ? '透支' : '剩餘' }}
+                        </span>
+                        <span class="font-mono font-bold text-lg" :class="myBalance < 0 ? 'text-rose-500' : 'text-slate-500'">
+                            {{ formatMoney(Math.abs(myBalance)) }}
+                        </span>
                     </div>
                 </div>
 
@@ -464,8 +483,8 @@
                             view.value = 'teacher';
                             localStorage.setItem('yixin_v3_session', formattedCode); 
                             
-                            // v3.6 修正：延遲確保圖表 DOM 存在
-                            nextTick(() => { setTimeout(updateCharts, 300); });
+                            // v3.7 修正：給予 1 秒延遲，確保圖表 DOM 準備好
+                            nextTick(() => { setTimeout(updateCharts, 1000); });
 
                         } catch(e) {
                             alert("建立房間失敗: " + e.message);
@@ -535,19 +554,9 @@
 
                 const updateStage = async (s) => {
                     const docRef = doc(db, "sessions", sessionCode.value);
-                    isProcessing.value = true;
-                    targetStage.value = s;
-                    try {
-                        await updateDoc(docRef, { stage: s });
-                        // v3.6 修正：手動觸發圖表重繪，並給予充足的 DOM 渲染時間
-                        setTimeout(() => {
-                            updateCharts();
-                            isProcessing.value = false;
-                        }, 500);
-                    } catch(e) {
-                        alert("切換失敗，請檢查網路");
-                        isProcessing.value = false;
-                    }
+                    // v3.7: 切換階段時也延遲畫圖
+                    await updateDoc(docRef, { stage: s });
+                    setTimeout(updateCharts, 500); 
                 };
 
                 const toggleInflation = async () => {
@@ -587,13 +596,14 @@
                 };
 
                 const resetGame = async () => {
-                    if (confirm("確定重置？")) {
+                    if (confirm("⚠️ 確定重置？所有學生資料將被清空並修復！")) {
                         const docRef = doc(db, "sessions", sessionCode.value);
                         await setDoc(docRef, {
                             stage: 1, inflationTriggered: false, round: 0,
                             groups: JSON.parse(JSON.stringify(defaultGroups)),
                             drawnCardIndices: [], lastDrawnCard: null
                         });
+                        alert("資料已修復，學生現在應該可以看到 13 組選單了。");
                     }
                 };
 
@@ -657,9 +667,8 @@
 
                 const updateCharts = () => {
                     if (view.value !== 'teacher') return;
-                    const groups = sessionData.value.groups;
-                    if (!groups || groups.length === 0) return;
 
+                    // Bar Chart (Stage 2)
                     if (sessionData.value.stage === 2) {
                         const ctx = document.getElementById('teacherAssetChart');
                         if (ctx) {
@@ -667,12 +676,12 @@
                             teacherAssetChartInstance = new Chart(ctx, {
                                 type: 'bar',
                                 data: {
-                                    labels: groups.map(g => g.name),
+                                    labels: sessionData.value.groups.map(g => g.name),
                                     datasets: [
-                                        { label: '儲蓄', data: groups.map(g => g.investment.savings), backgroundColor: '#10B981', stack: 'Stack 0' },
-                                        { label: 'ETF', data: groups.map(g => g.investment.etf), backgroundColor: '#3B82F6', stack: 'Stack 0' },
-                                        { label: '股票', data: groups.map(g => g.investment.stocks), backgroundColor: '#F59E0B', stack: 'Stack 0' },
-                                        { label: '創業', data: groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF4444', stack: 'Stack 0' },
+                                        { label: '儲蓄', data: sessionData.value.groups.map(g => g.investment.savings), backgroundColor: '#10B981', stack: 'Stack 0' },
+                                        { label: 'ETF', data: sessionData.value.groups.map(g => g.investment.etf), backgroundColor: '#3B82F6', stack: 'Stack 0' },
+                                        { label: '股票', data: sessionData.value.groups.map(g => g.investment.stocks), backgroundColor: '#F59E0B', stack: 'Stack 0' },
+                                        { label: '創業', data: sessionData.value.groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF4444', stack: 'Stack 0' },
                                     ]
                                 },
                                 options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
@@ -680,15 +689,16 @@
                         }
                     }
 
+                    // Line Chart (Stage 3)
                     if (sessionData.value.stage === 3) {
                         const ctx = document.getElementById('teacherLineChart');
                         if (ctx) {
                             if (teacherLineChartInstance) teacherLineChartInstance.destroy();
                             
-                            const sorted = [...groups].sort((a, b) => b.totalAssets - a.totalAssets);
+                            const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
                             const top3Ids = sorted.slice(0, 3).map(g => g.id);
                             const bottom3Ids = sorted.slice(-3).map(g => g.id);
-                            const targets = groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
+                            const targets = sessionData.value.groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
 
                             const years = Array.from({length: 21}, (_, i) => `${i}年`);
                             const datasets = targets.map(g => {
@@ -729,17 +739,16 @@
                 };
 
                 watch(() => sessionData.value, () => {
-                    // v3.6: 增加延遲以確保 v-if DOM 渲染完畢
-                    nextTick(() => setTimeout(updateCharts, 300));
+                    nextTick(() => setTimeout(updateCharts, 500));
                 }, { deep: true });
 
                 watch(() => sessionData.value.stage, () => {
-                    nextTick(() => setTimeout(updateCharts, 300));
+                    nextTick(() => setTimeout(updateCharts, 500));
                 });
                 
                 watch(view, (newVal) => {
                     if (newVal === 'teacher') {
-                        nextTick(() => setTimeout(updateCharts, 300));
+                        nextTick(() => setTimeout(updateCharts, 500));
                     }
                 });
 
