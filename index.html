@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一新中學理財 (單機版)</title>
+    <title>我是大富翁 (單機版)</title>
     
-    <!-- ★★★ 設定自訂 Icon (Money Emoji) ★★★ -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+    <!-- ★★★ 設定自訂 Icon ★★★ -->
+    <link rel="icon" type="image/png" href="icon.png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -64,7 +64,7 @@
             <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-2">
                 <div class="flex items-center space-x-2 font-bold text-xl text-emerald-600 tracking-wide cursor-pointer" @click="view = 'welcome'">
                     <i class="fa-solid fa-leaf text-emerald-500"></i>
-                    <span>一新中學理財 <span class="text-slate-400 text-sm font-normal ml-1 hidden sm:inline">| 單機版</span></span>
+                    <span>我是大富翁 <span class="text-slate-400 text-sm font-normal ml-1 hidden sm:inline">| 單機版</span></span>
                 </div>
                 
                 <!-- 快速切換視角按鈕 -->
@@ -94,7 +94,7 @@
             <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-fade-in">
                 <div class="text-center space-y-4">
                     <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold tracking-wider">FINANCIAL LITERACY WORKSHOP</span>
-                    <h1 class="text-4xl md:text-6xl font-bold text-slate-800 tracking-tight">理財體驗課 <span class="text-emerald-500">Offline</span></h1>
+                    <h1 class="text-4xl md:text-6xl font-bold text-slate-800 tracking-tight">我是大富翁 <span class="text-emerald-500">Offline</span></h1>
                     <p class="text-slate-500">單機練習模式：可自由切換「個人練習」與「市場模擬」視角。</p>
                 </div>
                 
