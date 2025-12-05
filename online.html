@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一新中學理財 v3.5 (穩定版)</title>
+    <title>一新中學理財 v3.6 (絲滑切換版)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,7 +50,7 @@
         <nav class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-50">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-2 font-bold text-lg">
-                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.5</span>
+                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.6</span>
                     <span class="hidden md:inline">一新中學理財 (雲端版)</span>
                     <div class="flex items-center ml-4 text-xs font-normal">
                         <span class="status-dot" :class="dbConnected ? 'status-online' : 'status-offline'"></span>
@@ -132,9 +132,12 @@
                     <p class="text-sm text-gray-500">代碼: <span class="font-mono font-bold text-blue-600 text-lg">{{ sessionCode }}</span></p>
                 </div>
                 <div class="flex space-x-2">
+                    <!-- v3.6 修正：按鈕增加 isProcessing 狀態，避免誤以為沒反應 -->
                     <button v-for="s in [1, 2, 3]" :key="s" @click="updateStage(s)" 
+                        :disabled="isProcessing"
                         :class="sessionData.stage === s ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'"
-                        class="px-3 py-2 rounded-lg font-bold transition text-xs md:text-sm">
+                        class="px-3 py-2 rounded-lg font-bold transition text-xs md:text-sm flex items-center disabled:opacity-50">
+                        <span v-if="isProcessing && targetStage === s" class="mr-1"><i class="fa-solid fa-spinner fa-spin"></i></span>
                         {{ ['1.預算', '2.投資', '3.總結'][s-1] }}
                     </button>
                 </div>
@@ -149,7 +152,6 @@
                     {{ sessionData.inflationTriggered ? '取消通膨' : '觸發通膨' }}
                 </button>
 
-                <!-- v3.5 修正：增加 isDrawing 狀態顯示 -->
                 <button v-if="sessionData.stage === 2" @click="drawFateCard" :disabled="isCardDeckEmpty || isProcessing"
                     :class="(isCardDeckEmpty || isProcessing) ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
                     class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center text-white">
@@ -204,7 +206,10 @@
                     </div>
                     <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm">
                         <h3 class="font-bold mb-4">資產分佈圖</h3>
-                        <div class="h-64"><canvas id="teacherAssetChart"></canvas></div>
+                        <div class="h-64 relative">
+                             <!-- 避免圖表因為切換太快而空白 -->
+                            <canvas id="teacherAssetChart"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -371,7 +376,7 @@
                 const myGroupIndex = ref(null); 
                 const isProcessing = ref(false);
                 const userType = ref('');
-                const randomClientId = ref(Math.floor(Math.random() * 10000)); // 隨機ID證明獨立性
+                const targetStage = ref(0); // 用來追蹤正在切換哪個階段
                 
                 const sessionData = ref({
                     stage: 1,
@@ -382,15 +387,13 @@
                     lastDrawnCard: null
                 });
 
-                // 強制輸入轉大寫且去空白
                 const cleanInput = () => {
                     sessionCodeInput.value = sessionCodeInput.value.toUpperCase().replace(/\s/g, '');
                 };
                 
-                // 清除暫存 (修復：徹底清除並重整)
                 const forceClear = () => {
                     localStorage.clear();
-                    window.location.href = window.location.href; // Hard Reload
+                    window.location.href = window.location.href; 
                 };
 
                 onMounted(async () => {
@@ -401,17 +404,12 @@
                         db = getFirestore(app);
                         dbConnected.value = true;
 
-                        // V3.4 絕殺：更換 key 名稱強制失效
                         localStorage.removeItem('yixin_v3_group'); 
-                        
                         const savedSession = localStorage.getItem('yixin_v3_session');
-                        if (savedSession) {
-                            sessionCodeInput.value = savedSession;
-                        }
+                        if (savedSession) sessionCodeInput.value = savedSession;
                         
                         view.value = 'welcome';
                         myGroupIndex.value = null;
-
                     } catch (e) {
                         alert("Firebase 連線失敗");
                     }
@@ -425,15 +423,12 @@
                     unsubscribe = onSnapshot(docRef, (docSnap) => {
                         if (docSnap.exists()) {
                             const remoteData = docSnap.data();
-                            // 防呆：如果雲端資料缺損，使用預設值補上
                             if(!remoteData.groups) remoteData.groups = JSON.parse(JSON.stringify(defaultGroups));
-                            // 確保投資物件結構完整
                             remoteData.groups.forEach(g => {
                                 if(!g.investment) g.investment = { savings: 25000, etf: 25000, stocks: 25000, entrepreneurship: 25000 };
                             });
                             sessionData.value = remoteData;
                             
-                            // 學生連線後，如果還沒選組，強制停在 lobby
                             if(view.value.startsWith('student') && myGroupIndex.value === null) {
                                 view.value = 'student-lobby';
                             }
@@ -469,12 +464,8 @@
                             view.value = 'teacher';
                             localStorage.setItem('yixin_v3_session', formattedCode); 
                             
-                            // ★★★ v3.5 修正：延遲後確保圖表渲染 ★★★
-                            nextTick(() => { 
-                                setTimeout(() => {
-                                    updateCharts(); 
-                                }, 300); 
-                            });
+                            // v3.6 修正：延遲確保圖表 DOM 存在
+                            nextTick(() => { setTimeout(updateCharts, 300); });
 
                         } catch(e) {
                             alert("建立房間失敗: " + e.message);
@@ -499,10 +490,7 @@
 
                         if (docSnap.exists()) {
                             sessionCode.value = formattedCode;
-                            
-                            // ★★★ 強制歸零 ★★★
                             myGroupIndex.value = null;
-                            
                             connectToSession(formattedCode);
                             view.value = 'student-lobby';
                             localStorage.setItem('yixin_v3_session', formattedCode);
@@ -547,7 +535,19 @@
 
                 const updateStage = async (s) => {
                     const docRef = doc(db, "sessions", sessionCode.value);
-                    await updateDoc(docRef, { stage: s });
+                    isProcessing.value = true;
+                    targetStage.value = s;
+                    try {
+                        await updateDoc(docRef, { stage: s });
+                        // v3.6 修正：手動觸發圖表重繪，並給予充足的 DOM 渲染時間
+                        setTimeout(() => {
+                            updateCharts();
+                            isProcessing.value = false;
+                        }, 500);
+                    } catch(e) {
+                        alert("切換失敗，請檢查網路");
+                        isProcessing.value = false;
+                    }
                 };
 
                 const toggleInflation = async () => {
@@ -560,8 +560,7 @@
                     const availableIndices = FATE_CARDS.map((_, i) => i).filter(i => !sessionData.value.drawnCardIndices.includes(i));
                     if (availableIndices.length === 0) return alert("卡牌已用盡");
 
-                    isProcessing.value = true; // 按鈕防呆
-
+                    isProcessing.value = true; 
                     const idx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
                     const card = FATE_CARDS[idx];
 
@@ -658,12 +657,9 @@
 
                 const updateCharts = () => {
                     if (view.value !== 'teacher') return;
-
-                    // v3.5 修正：確保資料結構安全，避免空值導致崩潰
                     const groups = sessionData.value.groups;
                     if (!groups || groups.length === 0) return;
 
-                    // Bar Chart (Stage 2)
                     if (sessionData.value.stage === 2) {
                         const ctx = document.getElementById('teacherAssetChart');
                         if (ctx) {
@@ -684,7 +680,6 @@
                         }
                     }
 
-                    // Line Chart (Stage 3)
                     if (sessionData.value.stage === 3) {
                         const ctx = document.getElementById('teacherLineChart');
                         if (ctx) {
@@ -734,25 +729,23 @@
                 };
 
                 watch(() => sessionData.value, () => {
-                    nextTick(updateCharts);
+                    // v3.6: 增加延遲以確保 v-if DOM 渲染完畢
+                    nextTick(() => setTimeout(updateCharts, 300));
                 }, { deep: true });
 
                 watch(() => sessionData.value.stage, () => {
-                    nextTick(updateCharts);
+                    nextTick(() => setTimeout(updateCharts, 300));
                 });
                 
-                // 監聽 View 的變化，確保切換到老師頁面時立即畫圖
                 watch(view, (newVal) => {
                     if (newVal === 'teacher') {
-                        nextTick(() => {
-                            setTimeout(updateCharts, 300); 
-                        });
+                        nextTick(() => setTimeout(updateCharts, 300));
                     }
                 });
 
                 return {
                     view, sessionCodeInput, sessionCode, dbConnected,
-                    sessionData, myGroupIndex, myGroup, isProcessing, userType, randomClientId,
+                    sessionData, myGroupIndex, myGroup, isProcessing, userType, targetStage,
                     handleTeacherLogin, handleStudentLogin, confirmGroupSelection, logout, cleanInput, forceClear,
                     updateStage, toggleInflation, drawFateCard, resetGame,
                     saveMyGroupData, setRisk, updateStudentChart,
