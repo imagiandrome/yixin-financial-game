@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我是大富翁 (雲端版)</title>
+    <!-- 修改標題：加入雲端 Emoji -->
+    <title>我是大富翁 ☁️</title>
     
     <!-- ★★★ 自訂 Icon ★★★ -->
     <link rel="icon" type="image/png" href="icon.png">
@@ -17,80 +18,126 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        // 中文使用系統預設
+                        sans: ['"Segoe UI"', '"Microsoft JhengHei"', 'sans-serif'],
+                        // 標題英文數字保留可愛風格
+                        display: ['"Fredoka"', 'cursive'],
+                    },
+                    colors: {
+                        retro: {
+                            bg: '#FFF8E7',      
+                            pink: '#FF8FAB',    
+                            green: '#06D6A0',   
+                            yellow: '#FFD166',  
+                            blue: '#118AB2',    
+                            red: '#EF476F',     
+                            dark: '#073B4C',    
+                        }
+                    },
+                    boxShadow: {
+                        'retro': '4px 4px 0px 0px rgba(7, 59, 76, 1)', 
+                        'retro-sm': '2px 2px 0px 0px rgba(7, 59, 76, 1)',
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
         body { 
-            font-family: 'Noto Sans TC', 'Segoe UI', sans-serif; 
-            background-color: #FFFBEB; /* 暖黃色背景 */
-            background-image: radial-gradient(#FEF3C7 1px, transparent 1px);
-            background-size: 20px 20px;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background-color: #FFF8E7;
+            background-image: radial-gradient(#FFD166 2px, transparent 2px);
+            background-size: 30px 30px;
         }
         .transition-all { transition: all 0.3s ease; }
         
-        /* 更有趣的卡片懸浮效果 */
-        .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+        /* 復古元件樣式 */
+        .btn-retro {
+            border: 2px solid #073B4C;
+            box-shadow: 4px 4px 0px 0px #073B4C;
+            transition: all 0.1s;
+        }
+        .btn-retro:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px 0px #073B4C;
+        }
+        .btn-retro:disabled {
+            background-color: #E5E7EB;
+            color: #9CA3AF;
+            border-color: #9CA3AF;
+            box-shadow: none;
+            transform: none;
+            cursor: not-allowed;
+        }
 
-        /* 滑桿樣式優化 */
+        .card-retro {
+            background: white;
+            border: 2px solid #073B4C;
+            border-radius: 1rem;
+            box-shadow: 6px 6px 0px 0px rgba(0,0,0,0.1);
+        }
+
+        /* 滑桿樣式 */
         input[type=range] { 
-            -webkit-appearance: none; background: transparent; cursor: pointer; position: relative; z-index: 20; height: 30px; margin: 10px 0;
+            -webkit-appearance: none; background: transparent; cursor: pointer; position: relative; z-index: 20; height: 30px; margin: 10px 0; width: 100%;
         }
         input[type=range]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: #ffffff; border: 4px solid currentColor; cursor: pointer; margin-top: -10px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); transition: transform 0.1s;
+            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; 
+            background: #FFD166; border: 2px solid #073B4C; 
+            cursor: pointer; margin-top: -10px; box-shadow: 2px 2px 0px #073B4C;
         }
-        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
         input[type=range]::-webkit-slider-runnable-track { 
-            width: 100%; height: 8px; cursor: pointer; background: #e5e7eb; border-radius: 999px; 
+            width: 100%; height: 6px; cursor: pointer; background: #073B4C; border-radius: 4px; 
         }
-        
-        .accent-10B981 { color: #10B981; }
-        .accent-3B82F6 { color: #3B82F6; }
-        .accent-F59E0B { color: #F59E0B; }
-        .accent-EF4444 { color: #EF4444; }
-        .accent-8B5CF6 { color: #8B5CF6; }
-        .accent-475569 { color: #475569; }
 
         [v-cloak] { display: none; }
         
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .status-online { background-color: #10B981; box-shadow: 0 0 5px #10B981; }
-        .status-offline { background-color: #EF4444; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .status-online { background-color: #06D6A0; box-shadow: 0 0 5px #06D6A0; border: 1px solid #073B4C; }
+        .status-offline { background-color: #EF476F; border: 1px solid #073B4C; }
 
-        /* 載入畫面樣式 */
+        /* 載入畫面 */
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #FFFBEB;
+            background: #FFF8E7;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 9999;
         }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="text-retro-dark font-sans">
 
     <!-- 載入中提示 -->
     <div id="loading-screen" v-if="!isAuthReady">
-        <h2 class="text-xl font-bold text-slate-700 mb-2">正在連線到雲端伺服器...</h2>
-        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500"></i>
-        <p class="text-slate-400 text-sm mt-4">請確保網路連線正常</p>
+        <h2 class="text-xl font-bold text-retro-dark mb-2">正在連線到雲端...</h2>
+        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-retro-blue"></i>
+        <p class="text-gray-400 text-sm mt-4 font-bold">Connecting...</p>
     </div>
 
-    <div id="app" v-else class="min-h-screen flex flex-col">
+    <div id="app" v-cloak class="min-h-screen flex flex-col">
         
         <!-- 導航列 -->
-        <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-100">
-            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center space-x-2 font-bold text-xl text-emerald-600 tracking-wide">
-                    <i class="fa-solid fa-cloud text-emerald-500"></i>
-                    <span>我是大富翁 <span class="text-slate-400 text-sm font-normal ml-1 hidden sm:inline">| 雲端版</span></span>
+        <nav class="bg-white border-b-2 border-retro-dark sticky top-0 z-50 px-4 py-3 shadow-sm">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-2 font-bold text-xl tracking-wide">
+                    <div class="bg-retro-yellow w-10 h-10 rounded-full border-2 border-retro-dark flex items-center justify-center text-xl shadow-retro-sm">☁️</div>
+                    <span class="font-display text-retro-dark">我是大富翁 <span class="text-gray-400 text-sm font-sans font-bold ml-1 hidden sm:inline">| 連線版</span></span>
                     
-                    <div class="flex items-center ml-3 px-2 py-1 bg-slate-50 rounded-full text-xs font-normal text-slate-500 border border-slate-100">
+                    <div class="flex items-center ml-2 px-2 py-0.5 bg-white border-2 border-retro-dark rounded-full text-xs font-bold text-retro-dark shadow-retro-sm">
                         <span class="status-dot" :class="dbConnected ? 'status-online' : 'status-offline'"></span>
-                        {{ dbConnected ? '已連線' : '連線中...' }}
+                        {{ dbConnected ? 'ONLINE' : '...' }}
                     </div>
                 </div>
                 <div class="space-x-2 text-sm font-medium">
-                    <button @click="logout" class="px-3 py-1.5 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-500 transition flex items-center">
+                    <button @click="logout" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-retro-red hover:bg-red-50 transition font-bold border-2 border-transparent hover:border-retro-red">
                         <i class="fa-solid fa-right-from-bracket mr-1"></i> 退出
                     </button>
                 </div>
@@ -100,43 +147,41 @@
         <!-- 1. 歡迎/登入畫面 -->
         <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-fade-in p-4">
             <div class="text-center space-y-4">
-                <span class="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold tracking-wider">ONLINE MULTIPLAYER</span>
-                <h1 class="text-4xl md:text-6xl font-bold text-slate-800 tracking-tight">我是大富翁 <span class="text-blue-500">Online</span></h1>
-                <p class="text-slate-500">請輸入老師提供的代碼加入房間</p>
+                <span class="inline-block px-3 py-1 bg-retro-blue text-white border-2 border-retro-dark rounded-full text-xs font-bold tracking-wider shadow-retro-sm">ONLINE MULTIPLAYER</span>
+                <h1 class="font-display text-5xl md:text-7xl font-bold text-retro-dark drop-shadow-sm">我是大富翁 <span class="text-retro-blue">Cloud</span></h1>
+                <p class="text-gray-500 font-bold">請輸入老師提供的代碼加入房間</p>
             </div>
             
-            <div class="bg-white p-8 rounded-3xl shadow-lg w-full max-w-md border border-slate-100 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-blue-500"></div>
+            <div class="card-retro p-8 w-full max-w-md relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-4 bg-retro-blue border-b-2 border-retro-dark"></div>
                 
-                <div class="mb-8">
-                    <label class="block text-sm font-bold text-slate-700 mb-2">遊戲代碼 (Code)</label>
+                <div class="mb-8 mt-4">
+                    <label class="block text-sm font-bold text-retro-dark mb-2">遊戲代碼 (Code)</label>
                     <div class="relative">
-                        <input type="text" v-model="sessionCodeInput" placeholder="例如: CLASS101" 
+                        <input type="text" v-model="sessionCodeInput" placeholder="CLASS101" 
                             @input="cleanInput"
-                            class="w-full pl-10 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-xl font-mono font-bold text-slate-700 text-center uppercase transition">
-                        <i class="fa-solid fa-key absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-300"></i>
+                            class="w-full pl-10 pr-4 py-3 border-2 border-retro-dark rounded-xl focus:outline-none focus:ring-4 focus:ring-retro-yellow transition text-xl font-mono font-bold text-retro-dark text-center uppercase bg-gray-50 placeholder-gray-300">
+                        <i class="fa-solid fa-key absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <button @click="handleTeacherLogin" :disabled="!sessionCodeInput || isProcessing"
-                        class="group p-4 bg-slate-50 border-2 border-slate-200 text-slate-600 rounded-2xl hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center h-32">
-                        <i class="fa-solid fa-chalkboard-user text-3xl mb-2 group-hover:scale-110 transition"></i>
+                        class="btn-retro bg-retro-green text-white rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-emerald-400">
+                        <i class="fa-solid fa-chalkboard-user text-3xl"></i>
                         <span class="font-bold">我是老師</span>
                         <span v-if="isProcessing && userType==='teacher'" class="text-xs mt-1 animate-pulse">建立中...</span>
-                        <span v-else class="text-xs opacity-60 mt-1">建立/管理</span>
                     </button>
                     <button @click="handleStudentLogin" :disabled="!sessionCodeInput || isProcessing"
-                        class="group p-4 bg-blue-50 border-2 border-blue-200 text-blue-600 rounded-2xl hover:bg-blue-100 hover:border-blue-400 transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center h-32">
-                        <i class="fa-solid fa-users text-3xl mb-2 group-hover:scale-110 transition"></i>
+                        class="btn-retro bg-retro-yellow text-retro-dark rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-amber-300">
+                        <i class="fa-solid fa-users text-3xl"></i>
                         <span class="font-bold">我是學生</span>
                         <span v-if="isProcessing && userType==='student'" class="text-xs mt-1 animate-pulse">搜尋中...</span>
-                        <span v-else class="text-xs opacity-60 mt-1">加入遊戲</span>
                     </button>
                 </div>
                 
                 <div class="mt-8 text-center">
-                    <button @click="forceClear" class="text-xs text-slate-300 hover:text-red-400 transition border-b border-transparent hover:border-red-400 pb-0.5">
+                    <button @click="forceClear" class="text-xs text-gray-400 underline hover:text-retro-red font-bold">
                         無法登入？點此重置系統
                     </button>
                 </div>
@@ -144,47 +189,52 @@
         </div>
 
         <!-- 2. 學生選組大廳 -->
-        <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh] bg-blue-50">
-            <h2 class="text-2xl font-bold mb-2 text-center">👋 歡迎加入！</h2>
-            <p class="text-gray-500 mb-8 text-center">房間代碼: <span class="font-bold text-blue-600">{{ sessionCode }}</span></p>
+        <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh] bg-retro-blue/10 rounded-3xl my-4 border-2 border-retro-dark border-dashed">
+            <h2 class="font-display text-3xl font-bold mb-2 text-retro-dark">👋 歡迎加入！</h2>
+            <div class="inline-flex items-center bg-white px-4 py-2 rounded-full shadow-retro-sm border-2 border-retro-dark text-sm font-mono mb-8">
+                <span class="text-gray-400 mr-2 font-bold">ROOM:</span>
+                <span class="font-bold text-retro-blue text-lg">{{ sessionCode }}</span>
+            </div>
             
-            <h3 class="text-lg font-bold mb-6 text-slate-600 flex items-center">
+            <h3 class="text-lg font-bold mb-6 text-retro-dark flex items-center">
                 <i class="fa-solid fa-people-group mr-2"></i> 請選擇你的組別：
             </h3>
             
-            <div v-if="!sessionData.groups || sessionData.groups.length === 0" class="text-center text-slate-500 p-12 border-2 border-dashed border-slate-300 rounded-2xl bg-white/50">
-                <i class="fa-solid fa-triangle-exclamation text-4xl mb-4 text-amber-400"></i><br>
+            <div v-if="!sessionData.groups || sessionData.groups.length === 0" class="card-retro p-8 text-center bg-white">
+                <i class="fa-solid fa-triangle-exclamation text-4xl mb-4 text-retro-yellow"></i><br>
                 <span class="font-bold text-lg">等待老師建立遊戲資料...</span><br>
-                <span class="text-xs text-slate-400 mt-2 block">(如果老師已建立，請老師按後台的「重置」修復資料)</span>
+                <span class="text-xs text-retro-red mt-2 block font-bold">(請老師按後台的「重置」修復資料)</span>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full max-w-4xl">
                 <button v-for="(g, idx) in sessionData.groups" :key="idx" 
                     @click="confirmGroupSelection(idx)"
-                    class="p-6 rounded-2xl bg-white border-2 border-transparent shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-blue-400 hover:bg-blue-50 transition text-lg font-bold text-slate-600 flex flex-col items-center justify-center aspect-video"
-                    :class="myGroupIndex === idx ? 'border-blue-500 bg-blue-50 text-blue-600 ring-4 ring-blue-100' : ''">
-                    <span class="text-2xl mb-1 opacity-20"><i class="fa-solid fa-user-group"></i></span>
-                    {{ g.name }}
+                    class="btn-retro bg-white p-4 rounded-xl hover:bg-blue-50 flex flex-col items-center justify-center min-h-[100px]"
+                    :class="myGroupIndex === idx ? 'bg-retro-blue text-white' : 'text-retro-dark'">
+                    <span class="text-2xl mb-1" :class="myGroupIndex === idx ? 'opacity-100' : 'opacity-20'"><i class="fa-solid fa-user-astronaut"></i></span>
+                    <span class="font-bold text-lg">{{ g.name }}</span>
                 </button>
             </div>
             
-            <button @click="logout" class="mt-16 text-slate-400 hover:text-slate-600 underline transition">返回首頁</button>
+            <button @click="logout" class="mt-12 font-bold text-gray-400 hover:text-retro-dark underline">返回首頁</button>
         </div>
 
         <!-- 3. 老師控制台 -->
         <div v-if="view === 'teacher'" class="container mx-auto p-4 md:p-8 space-y-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-emerald-500 flex flex-wrap justify-between items-center gap-4">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800 flex items-center">
-                        <i class="fa-solid fa-chalkboard-user mr-3 text-emerald-500"></i> 老師後台
-                    </h2>
-                    <p class="text-sm text-slate-500 mt-1">房間代碼: <span class="font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{{ sessionCode }}</span></p>
+            <!-- 頂部資訊 -->
+            <div class="card-retro p-4 bg-white flex flex-wrap gap-4 justify-between items-center sticky top-20 z-40">
+                <div class="flex items-center gap-3">
+                    <div class="bg-retro-pink w-10 h-10 rounded-lg border-2 border-retro-dark flex items-center justify-center text-white font-bold text-xl shadow-retro-sm">T</div>
+                    <div>
+                        <h2 class="font-bold text-lg text-retro-dark">老師後台</h2>
+                        <p class="text-xs font-bold text-gray-400 uppercase">Room: {{ sessionCode }}</p>
+                    </div>
                 </div>
-                <div class="flex bg-slate-100 p-1 rounded-xl">
+                <div class="flex gap-2 bg-gray-100 p-1.5 rounded-lg border-2 border-gray-200">
                     <button v-for="s in [1, 2, 3]" :key="s" @click="updateStage(s)" 
-                        :class="sessionData.stage === s ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'"
-                        class="px-4 py-2 rounded-lg font-bold transition text-sm">
-                        {{ ['1. 預算', '2. 投資', '3. 總結'][s-1] }}
+                        :class="sessionData.stage === s ? 'bg-retro-blue text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'"
+                        class="px-4 py-1.5 rounded-md font-bold transition text-sm">
+                        {{ ['1.預算', '2.投資', '3.總結'][s-1] }}
                     </button>
                 </div>
             </div>
@@ -192,23 +242,22 @@
             <!-- 控制按鈕 -->
             <div class="flex flex-wrap gap-3 items-center">
                 <button v-if="sessionData.stage === 1" @click="toggleInflation" 
-                    :class="sessionData.inflationTriggered ? 'bg-rose-500 text-white ring-4 ring-rose-200' : 'bg-white text-rose-500 border-2 border-rose-100 hover:border-rose-500'"
-                    class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center">
-                    <i class="fa-solid fa-triangle-exclamation mr-2"></i> 
+                    :class="sessionData.inflationTriggered ? 'bg-retro-red text-white' : 'bg-white text-retro-red'"
+                    class="btn-retro px-6 py-3 rounded-xl font-bold flex items-center">
+                    <i class="fa-solid fa-fire mr-2"></i> 
                     {{ sessionData.inflationTriggered ? '取消通膨' : '觸發通膨' }}
                 </button>
 
                 <button v-if="sessionData.stage === 2" @click="drawFateCard" :disabled="isCardDeckEmpty || isProcessing"
-                    :class="(isCardDeckEmpty || isProcessing) ? 'bg-slate-300 cursor-not-allowed text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:scale-105'"
-                    class="px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 transition flex items-center">
+                    class="btn-retro bg-retro-pink text-white px-6 py-3 rounded-xl font-bold flex items-center disabled:opacity-50">
                     <i class="fa-solid" :class="isProcessing ? 'fa-spinner fa-spin' : 'fa-dice'"></i> 
                     <span class="ml-2">
                         {{ isProcessing ? '處理中...' : (isCardDeckEmpty ? '卡牌已用盡' : `抽取命運卡 (${sessionData.drawnCardIndices.length}/${FATE_CARDS.length})`) }}
                     </span>
                 </button>
                 
-                <button @click="resetGame" class="ml-auto px-4 py-2 text-sm bg-white text-slate-400 border border-slate-200 rounded-lg hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition flex items-center">
-                    <i class="fa-solid fa-rotate-right mr-2"></i> 修復/重置資料
+                <button @click="resetGame" class="ml-auto btn-retro bg-gray-800 text-white px-4 py-2 rounded-lg text-sm">
+                    <i class="fa-solid fa-wrench mr-1"></i> 修復資料
                 </button>
             </div>
 
@@ -217,58 +266,55 @@
                 <!-- 預算總覽 -->
                 <div v-if="sessionData.stage === 1" class="md:col-span-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     <div v-for="(g, idx) in sessionData.groups" :key="idx" 
-                        class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                        <div class="flex justify-between mb-2">
-                            <span class="font-bold text-slate-700">{{ g.name }}</span>
-                            <span class="text-xs px-2 py-0.5 rounded-full font-bold" 
-                                :class="calculateBalance(g) < 0 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'">
-                                {{ calculateBalance(g) < 0 ? '透支' : 'OK' }}
+                        class="card-retro p-3 bg-white">
+                        <div class="flex justify-between mb-1">
+                            <span class="font-bold text-sm">{{ g.name }}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full border border-retro-dark font-bold" 
+                                :class="calculateBalance(g) < 0 ? 'bg-retro-red text-white' : 'bg-retro-green text-white'">
+                                {{ calculateBalance(g) < 0 ? 'NO' : 'OK' }}
                             </span>
                         </div>
-                        <div class="w-full bg-slate-100 rounded-full h-1.5 mb-2">
-                             <div class="bg-blue-400 h-1.5 rounded-full" :style="{width: Math.min((calculateTotalExpense(g)/INCOME*100), 100) + '%'}"></div>
+                        <div class="w-full bg-gray-100 rounded-full h-1.5 mb-1 border border-gray-200">
+                             <div class="bg-retro-blue h-1.5 rounded-full" :style="{width: Math.min((calculateTotalExpense(g)/INCOME*100), 100) + '%'}"></div>
                         </div>
-                        <div class="text-xs text-right text-slate-400 font-mono">{{ formatMoney(calculateTotalExpense(g)) }}</div>
+                        <div class="text-xs text-right font-mono font-bold text-gray-500">{{ formatMoney(calculateTotalExpense(g)) }}</div>
                     </div>
                 </div>
 
                 <!-- 投資排行 -->
                 <div v-if="sessionData.stage === 2" class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="md:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <h3 class="font-bold mb-4 text-lg text-slate-800 flex items-center"><i class="fa-solid fa-ranking-star mr-2 text-yellow-500"></i> 即時排行</h3>
+                    <div class="md:col-span-1 card-retro p-6 bg-white">
+                        <h3 class="font-bold text-lg mb-4 border-b-2 border-gray-100 pb-2">🏆 即時排行</h3>
                         
-                        <div v-if="sessionData.lastDrawnCard" class="mb-4 p-4 bg-indigo-50 text-indigo-700 rounded-xl text-center border border-indigo-100 animate-pulse">
-                            <div class="text-xs opacity-60 mb-1 font-bold uppercase tracking-wider">Latest Event</div>
-                            <div class="text-lg font-bold">{{ sessionData.lastDrawnCard }}</div>
+                        <div v-if="sessionData.lastDrawnCard" class="mb-4 p-3 bg-retro-yellow border-2 border-retro-dark rounded-lg shadow-retro-sm text-center animate-bounce">
+                            <div class="text-xs font-bold opacity-60 uppercase">Event</div>
+                            <div class="font-bold text-lg">{{ sessionData.lastDrawnCard }}</div>
                         </div>
 
                         <div class="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                            <div v-for="(g, idx) in sortedGroups" :key="idx" class="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-white hover:shadow-sm transition border border-transparent hover:border-slate-200">
-                                <div class="flex items-center">
-                                    <span class="w-6 h-6 flex items-center justify-center bg-slate-200 rounded-full text-xs font-bold mr-3" 
-                                          :class="idx < 3 ? 'bg-yellow-400 text-white' : 'text-slate-500'">{{ idx + 1 }}</span>
-                                    <span class="text-sm font-bold text-slate-700">{{ g.name }}</span>
-                                    <span class="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold" 
-                                          :class="g.riskProfile==='aggressive'?'bg-rose-100 text-rose-600':'bg-emerald-100 text-emerald-600'">
-                                        {{ g.riskProfile==='aggressive'?'積極':'穩健' }}
+                            <div v-for="(g, idx) in sortedGroups" :key="idx" class="flex justify-between items-center p-2 border-b border-gray-100">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-retro-dark text-white rounded-full flex items-center justify-center text-xs font-bold">{{ idx + 1 }}</span>
+                                    <span class="font-bold text-sm">{{ g.name }}</span>
+                                    <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded font-bold border border-retro-dark" 
+                                          :class="g.riskProfile==='aggressive'?'bg-retro-red text-white':'bg-retro-green text-white'">
+                                        {{ g.riskProfile==='aggressive'?'衝':'穩' }}
                                     </span>
                                 </div>
-                                <span class="font-mono text-sm font-bold text-blue-600">{{ formatMoney(Math.round(g.totalAssets)) }}</span>
+                                <span class="font-mono text-sm font-bold text-retro-blue">{{ formatMoney(Math.round(g.totalAssets)) }}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <h3 class="font-bold mb-4 text-lg text-slate-800">資產分佈圖</h3>
-                        <div class="h-80 relative">
-                            <canvas id="teacherAssetChart"></canvas>
-                        </div>
+                    <div class="md:col-span-2 card-retro p-6 bg-white">
+                        <h3 class="font-bold text-lg mb-4">資產分佈</h3>
+                        <div class="h-64 relative"><canvas id="teacherAssetChart"></canvas></div>
                     </div>
                 </div>
 
                 <!-- 總結圖表 -->
-                <div v-if="sessionData.stage === 3" class="md:col-span-3 bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-                    <h3 class="font-bold mb-6 text-center text-2xl text-slate-800">20 年資產模擬 <span class="text-base font-normal text-slate-400 block mt-1">(前三名 vs 後三名)</span></h3>
-                    <div class="h-96 relative"><canvas id="teacherLineChart"></canvas></div>
+                <div v-if="sessionData.stage === 3" class="md:col-span-3 card-retro p-6 bg-white">
+                    <h3 class="font-display text-2xl font-bold text-center mb-6 text-retro-dark">20 年資產模擬 <span class="text-sm font-sans font-normal text-gray-400 block mt-1">(前三名 vs 後三名)</span></h3>
+                    <div class="h-80 relative"><canvas id="teacherLineChart"></canvas></div>
                 </div>
             </div>
         </div>
@@ -276,68 +322,59 @@
         <!-- 4. 學生遊戲介面 -->
         <div v-if="view === 'student-game'" class="container mx-auto p-4 md:p-6 space-y-6 max-w-md pb-24">
             
-            <div class="sticky top-4 z-30 bg-white/95 backdrop-blur p-4 rounded-2xl shadow-lg border border-slate-100 flex justify-between items-center">
-                <div class="flex items-center">
-                     <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 mr-3 font-bold text-lg border border-blue-100">
+            <div class="sticky top-4 z-30 card-retro p-3 bg-white flex justify-between items-center shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-retro-blue border-2 border-retro-dark rounded-full flex items-center justify-center text-white font-bold text-lg">
                         {{ myGroupIndex + 1 }}
                     </div>
                     <div>
-                        <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Team</div>
-                        <div class="font-bold text-slate-800">{{ myGroup.name }}</div>
+                        <div class="text-[10px] font-bold text-gray-400 uppercase">TEAM</div>
+                        <div class="font-bold text-retro-dark">{{ myGroup.name }}</div>
                     </div>
                 </div>
                 
                 <div class="flex items-center">
-                    <div class="text-xs font-bold mr-3 px-2 py-1 rounded-full bg-slate-50 border border-slate-200" :class="dbConnected ? 'text-emerald-500' : 'text-red-500'">
-                        {{ dbConnected ? '● 連線' : '● 斷線' }}
+                    <div class="text-xs font-bold mr-3 px-2 py-1 rounded-full border-2 border-retro-dark" :class="dbConnected ? 'bg-retro-green text-white' : 'bg-retro-red text-white'">
+                        {{ dbConnected ? '連線' : '斷線' }}
                     </div>
-                    <button @click="view = 'student-lobby'" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-600 transition">換組</button>
+                    <button @click="view = 'student-lobby'" class="text-xs font-bold text-gray-400 hover:text-retro-red underline">換組</button>
                 </div>
             </div>
 
             <!-- Stage 1: 預算 -->
-            <div v-if="sessionData.stage === 1" class="bg-white rounded-3xl shadow-sm p-6 space-y-6 border border-slate-100">
-                <div v-if="sessionData.inflationTriggered" class="bg-rose-50 text-rose-600 p-4 rounded-xl text-sm font-bold animate-pulse text-center border border-rose-200 shadow-sm">
-                    <i class="fa-solid fa-triangle-exclamation text-xl mb-1 block"></i> 
-                    警告：通膨發生！支出增加 10%
+            <div v-if="sessionData.stage === 1" class="card-retro p-6 space-y-6 bg-white">
+                <div v-if="sessionData.inflationTriggered" class="bg-retro-red text-white p-3 rounded-lg text-sm font-bold text-center border-2 border-retro-dark shadow-retro-sm animate-pulse">
+                    🔥 警告：通膨發生！支出增加 10%
                 </div>
 
-                <div class="flex justify-between items-end border-b border-slate-100 pb-4">
+                <div class="flex justify-between items-end border-b-2 border-gray-100 pb-4">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-800">預算規劃</h2>
-                        <p class="text-xs text-slate-400">Monthly Budget</p>
+                        <h2 class="text-xl font-bold text-retro-dark">預算規劃</h2>
+                        <p class="text-xs text-gray-400 font-bold">Budgeting</p>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs text-slate-500">本月結餘</div>
-                        <div class="text-xl font-mono font-bold" :class="myBalance < 0 ? 'text-rose-500' : 'text-emerald-500'">
+                        <div class="text-xs text-gray-400 font-bold">結餘</div>
+                        <div class="text-2xl font-mono font-bold" :class="myBalance < 0 ? 'text-retro-red' : 'text-retro-green'">
                             {{ formatMoney(myBalance) }}
                         </div>
                     </div>
                 </div>
 
-                <!-- 圓餅圖容器 -->
-                <div class="h-48 relative flex justify-center my-4">
+                <div class="h-40 relative flex justify-center">
                     <canvas id="studentPieChart"></canvas>
                     <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none mt-4">
-                        <span class="font-bold text-sm" :class="myBalance < 0 ? 'text-rose-500' : 'text-slate-400'">
-                            {{ myBalance < 0 ? '透支' : '剩餘' }}
-                        </span>
-                        <span class="font-mono font-bold text-lg" :class="myBalance < 0 ? 'text-rose-500' : 'text-slate-600'">
-                            {{ formatMoney(Math.abs(myBalance)) }}
-                        </span>
+                         <span class="font-bold text-sm" :class="myBalance < 0 ? 'text-retro-red' : 'text-gray-400'">{{ myBalance < 0 ? '透支' : '剩餘' }}</span>
+                         <span class="font-mono font-bold text-lg text-retro-dark">{{ formatMoney(Math.abs(myBalance)) }}</span>
                     </div>
                 </div>
 
-                <div class="space-y-8">
+                <div class="space-y-6">
                     <div v-for="(val, key) in myGroup.budget" :key="key">
-                        <div class="flex justify-between text-sm mb-2">
-                            <span class="font-bold text-slate-600 flex items-center">
-                                <span class="w-6 h-6 rounded-full flex items-center justify-center mr-2 text-white text-xs" :class="`bg-${{food:'emerald-500', transport:'blue-500', entertainment:'amber-500', education:'purple-500', family:'rose-500'}[key]}`">
-                                    <i :class="getIcon(key)"></i>
-                                </span>
-                                {{ translate(key) }}
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-bold text-retro-dark flex items-center">
+                                <i :class="getIcon(key)" class="mr-2 w-6 text-center text-gray-400"></i> {{ translate(key) }}
                             </span>
-                            <span class="font-mono text-slate-500">{{ formatMoney(calculateExpenseItem(val)) }}</span>
+                            <span class="font-mono font-bold text-gray-500">{{ formatMoney(calculateExpenseItem(val)) }}</span>
                         </div>
                         <input type="range" min="0" max="10000" step="500" 
                             v-model.number="myGroup.budget[key]" 
@@ -349,34 +386,36 @@
             </div>
 
             <!-- Stage 2: 投資 -->
-            <div v-if="sessionData.stage === 2" class="bg-white rounded-3xl shadow-sm p-6 space-y-6 border border-slate-100">
-                <div class="flex justify-between items-end border-b border-slate-100 pb-4">
+            <div v-if="sessionData.stage === 2" class="card-retro p-6 space-y-6 bg-white">
+                <div class="flex justify-between items-end border-b-2 border-gray-100 pb-4">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-800">投資配置</h2>
-                        <p class="text-xs text-slate-400">Investment</p>
+                        <h2 class="text-xl font-bold text-retro-dark">投資配置</h2>
+                        <p class="text-xs text-gray-400 font-bold">Investment</p>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs text-slate-500">剩餘資金 (需為 0)</div>
-                        <div class="text-xl font-mono font-bold" :class="investmentRemaining !== 0 ? 'text-rose-500' : 'text-slate-700'">
+                        <div class="text-xs text-gray-400 font-bold">待分配</div>
+                        <div class="text-xl font-mono font-bold" :class="investmentRemaining !== 0 ? 'text-retro-red' : 'text-gray-400'">
                             {{ formatMoney(investmentRemaining) }}
                         </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <button @click="setRisk('conservative')" :class="myGroup.riskProfile === 'conservative' ? 'ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-400'" class="p-3 rounded-xl border transition text-sm font-bold">
-                        <i class="fa-solid fa-shield-halved mr-1"></i> 穩健型
+                    <button @click="setRisk('conservative')" class="btn-retro py-2 rounded-lg font-bold text-sm"
+                        :class="myGroup.riskProfile === 'conservative' ? 'bg-retro-green text-white' : 'bg-white text-gray-400 border-gray-300 shadow-none'">
+                        穩健型 (綠)
                     </button>
-                    <button @click="setRisk('aggressive')" :class="myGroup.riskProfile === 'aggressive' ? 'ring-2 ring-rose-500 bg-rose-50 text-rose-700' : 'bg-slate-50 text-slate-400'" class="p-3 rounded-xl border transition text-sm font-bold">
-                        <i class="fa-solid fa-rocket mr-1"></i> 積極型
+                    <button @click="setRisk('aggressive')" class="btn-retro py-2 rounded-lg font-bold text-sm"
+                        :class="myGroup.riskProfile === 'aggressive' ? 'bg-retro-red text-white' : 'bg-white text-gray-400 border-gray-300 shadow-none'">
+                        積極型 (紅)
                     </button>
                 </div>
 
                 <div class="space-y-6">
                     <div v-for="(val, key) in myGroup.investment" :key="key">
-                        <div class="flex justify-between text-sm mb-2">
-                            <span class="font-medium text-slate-700">{{ translate(key) }}</span>
-                            <span class="font-mono text-slate-500">{{ formatMoney(val) }}</span>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-bold text-retro-dark">{{ translate(key) }}</span>
+                            <span class="font-mono font-bold text-gray-500">{{ formatMoney(val) }}</span>
                         </div>
                         <input type="range" min="0" max="100000" step="5000" 
                             v-model.number="myGroup.investment[key]" 
@@ -385,25 +424,23 @@
                     </div>
                 </div>
 
-                <div v-if="sessionData.lastDrawnCard" class="mt-4 p-4 bg-indigo-600 text-white rounded-xl shadow-lg text-center animate-bounce">
-                    <p class="text-xs opacity-75">市場快訊</p>
+                <div v-if="sessionData.lastDrawnCard" class="mt-4 p-4 bg-retro-yellow border-2 border-retro-dark rounded-xl shadow-retro-sm text-center animate-bounce">
+                    <p class="text-xs font-bold opacity-60">NEWS</p>
                     <p class="text-lg font-bold">{{ sessionData.lastDrawnCard }}</p>
-                    <p class="text-sm mt-1">資產已自動更新！</p>
+                    <p class="text-sm mt-1 font-bold opacity-80">資產已更新</p>
                 </div>
             </div>
 
             <!-- Stage 3: 結束 -->
-            <div v-if="sessionData.stage === 3" class="bg-white rounded-3xl shadow-lg p-10 text-center">
-                <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fa-solid fa-trophy text-4xl text-yellow-500"></i>
+            <div v-if="sessionData.stage === 3" class="card-retro p-8 text-center bg-white relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-4 bg-retro-yellow border-b-2 border-retro-dark"></div>
+                <i class="fa-solid fa-trophy text-6xl text-retro-yellow drop-shadow-md mb-4 mt-4"></i>
+                <h2 class="text-2xl font-bold mb-2 font-display">GAME OVER!</h2>
+                <div class="py-4 border-y-2 border-dashed border-gray-200 my-4">
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">Final Score</p>
+                    <p class="text-4xl font-mono font-bold text-retro-blue mt-2">{{ formatMoney(Math.round(myGroup.totalAssets)) }}</p>
                 </div>
-                <h2 class="text-2xl font-bold mb-2 text-slate-800">課程結束！</h2>
-                <p class="text-slate-500 text-sm mb-6">Congratulations!</p>
-                <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Final Result</p>
-                    <p class="text-4xl font-mono font-bold text-slate-800">{{ formatMoney(Math.round(myGroup.totalAssets)) }}</p>
-                </div>
-                <p class="text-slate-400 text-xs mt-6">請舉手回報此數字給老師進行結算。</p>
+                <p class="text-gray-400 text-xs font-bold">請舉手回報給老師</p>
             </div>
         </div>
     </div>
@@ -413,9 +450,7 @@
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ============================================================
-        // ⚠️ 您提供的 Config 已填入
-        // ============================================================
+        // 您的 Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyBl_7bBubA98S9RYSO_wR4PQdPiN9DT_aU",
             authDomain: "yixin-monopoly-game.firebaseapp.com",
@@ -597,6 +632,7 @@
 
                 const logout = () => {
                     localStorage.removeItem('yixin_v3_session');
+                    localStorage.removeItem('yixinGroup'); 
                     view.value = 'welcome';
                     sessionCodeInput.value = '';
                     sessionCode.value = '';
@@ -710,7 +746,7 @@
                     if (!ctx) return;
 
                     const dataValues = Object.keys(myGroup.value.budget).map(k => myGroup.value.budget[k]);
-                    const bgColors = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EF4444'];
+                    const bgColors = ['#FFD166', '#118AB2', '#EF476F', '#06D6A0', '#073B4C'];
 
                     if (studentChartInstance) {
                         studentChartInstance.data.datasets[0].data = dataValues;
@@ -718,10 +754,7 @@
                     } else {
                         studentChartInstance = new Chart(ctx, {
                             type: 'doughnut',
-                            data: {
-                                labels: Object.keys(myGroup.value.budget).map(k => translate(k)),
-                                datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 0 }]
-                            },
+                            data: { labels: Object.keys(myGroup.value.budget).map(translate), datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 2, borderColor: '#073B4C' }] },
                             options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
                         });
                     }
@@ -729,70 +762,95 @@
 
                 let teacherAssetChartInstance = null;
                 let teacherLineChartInstance = null;
-
                 const updateCharts = () => {
                     if (view.value !== 'teacher') return;
-                    const groups = sessionData.value.groups;
-                    if (!groups || groups.length === 0) return;
 
-                    if (sessionData.value.stage === 2) {
+                    if (stage.value === 2) {
                         const ctx = document.getElementById('teacherAssetChart');
                         if (ctx) {
                             if (teacherAssetChartInstance) teacherAssetChartInstance.destroy();
                             teacherAssetChartInstance = new Chart(ctx, {
                                 type: 'bar',
                                 data: {
-                                    labels: groups.map(g => g.name),
-                                    datasets: [
-                                        { label: '儲蓄', data: groups.map(g => g.investment.savings), backgroundColor: '#10B981', stack: 'Stack 0' },
-                                        { label: 'ETF', data: groups.map(g => g.investment.etf), backgroundColor: '#3B82F6', stack: 'Stack 0' },
-                                        { label: '股票', data: groups.map(g => g.investment.stocks), backgroundColor: '#F59E0B', stack: 'Stack 0' },
-                                        { label: '創業', data: groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF4444', stack: 'Stack 0' },
-                                    ]
+                                    labels: sessionData.value.groups.map(g => g.name),
+                                    datasets: [{ label: '總資產', data: sessionData.value.groups.map(g => g.totalAssets), backgroundColor: '#118AB2', borderWidth: 2, borderColor: '#073B4C' }]
                                 },
-                                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+                                options: { responsive: true, maintainAspectRatio: false }
                             });
                         }
                     }
-
-                    if (sessionData.value.stage === 3) {
+                    
+                    if (stage.value === 3) {
                         const ctx = document.getElementById('teacherLineChart');
                         if (ctx) {
                             if (teacherLineChartInstance) teacherLineChartInstance.destroy();
                             
-                            const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
-                            const top3Ids = sorted.slice(0, 3).map(g => g.id);
-                            const bottom3Ids = sorted.slice(-3).map(g => g.id);
-                            const targets = sessionData.value.groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
+                             const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
+                             const top3Ids = sorted.slice(0, 3).map(g => g.id);
+                             const bottom3Ids = sorted.slice(-3).map(g => g.id);
+                             const targets = sessionData.value.groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
 
-                            const years = Array.from({length: 21}, (_, i) => `${i}年`);
-                            const datasets = targets.map(g => {
-                                const total = g.totalAssets || 1;
+                             const years = Array.from({length: 21}, (_, i) => `${i}年`);
+                             const datasets = targets.map(g => {
+                                const total = g.totalAssets;
                                 const inv = g.investment;
-                                const rate = 1 + ((inv.savings*0.02 + inv.etf*0.06 + inv.stocks*0.08 + inv.entrepreneurship*0.12) / total);
-                                const isHighRisk = (inv.entrepreneurship / total) > 0.3;
-                                const willFail = isHighRisk && ((g.id * 7) % 10 < 3);
-
-                                let data = [];
-                                let current = g.totalAssets;
-                                for(let y=0; y<=20; y++) {
-                                    data.push(Math.round(current));
-                                    if (willFail && y >= 9) current *= 0.98;
-                                    else current *= rate;
+                                const weightedReturn = (
+                                    (inv.savings * 0.02) + 
+                                    (inv.etf * 0.06) + 
+                                    (inv.stocks * 0.08) + 
+                                    (inv.entrepreneurship * 0.12)
+                                ) / total;
+                                
+                                const baseRate = 1 + weightedReturn;
+                                
+                                const entrepreneurialRatio = inv.entrepreneurship / total;
+                                let hasFailed = false;
+                                const seed = (g.id * 11) % 100; 
+                                if (entrepreneurialRatio > 0.3 && seed < 30) {
+                                    hasFailed = true;
                                 }
-
-                                const rank = sorted.findIndex(sg => sg.id === g.id) + 1;
-                                const color = rank <= 3 ? '#10B981' : '#EF4444';
+                                
+                                let data = [Math.round(total)];
+                                let currentAsset = total;
+                                
+                                for(let y=1; y<=20; y++) {
+                                    if (hasFailed && y >= 10) {
+                                        currentAsset = (inv.savings + inv.etf + inv.stocks) * Math.pow(0.98, y - 10);
+                                        currentAsset = Math.max(currentAsset, total * 0.1);
+                                    } else {
+                                        currentAsset = g.totalAssets * Math.pow(baseRate, y);
+                                    }
+                                    data.push(Math.round(currentAsset));
+                                }
+                                
+                                const isTop = top3Ids.includes(g.id);
+                                const rank = sorted.findIndex(s => s.id === g.id) + 1;
+                                
+                                let distinctColor;
+                                if (isTop) {
+                                    if(rank === 1) distinctColor = '#06D6A0'; 
+                                    else if(rank === 2) distinctColor = '#118AB2';
+                                    else distinctColor = '#FFD166';
+                                } else {
+                                    const bottomIndex = bottom3Ids.indexOf(g.id); 
+                                    if(bottomIndex === 2) distinctColor = '#073B4C';
+                                    else if(bottomIndex === 1) distinctColor = '#EF476F';
+                                    else distinctColor = '#FF8FAB';
+                                }
+                                
+                                const labelSuffix = hasFailed ? " (風險爆發)" : ` (年化 ${(weightedReturn * 100).toFixed(1)}%)`;
 
                                 return {
-                                    label: `No.${rank} ${g.name}` + (willFail ? ' (風險爆發)' : ''),
+                                    label: `No.${rank} ${g.name}` + labelSuffix,
                                     data: data,
-                                    borderColor: color,
-                                    borderWidth: rank <= 3 ? 3 : 1,
+                                    borderColor: distinctColor,
+                                    backgroundColor: distinctColor,
+                                    borderWidth: isTop ? 4 : 2,
+                                    borderDash: hasFailed ? [10, 5] : [],
                                     fill: false,
                                     tension: 0.4
                                 };
-                            });
+                             });
 
                             teacherLineChartInstance = new Chart(ctx, {
                                 type: 'line',
