@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>一新中學理財 (單機版)</title>
     
-    <!-- ★★★ 設定自訂 Icon ★★★ -->
-    <!-- 已修改為 icon.png -->
-    <link rel="icon" type="image/png" href="icon.png">
+    <!-- ★★★ 設定自訂 Icon (Money Emoji) ★★★ -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -349,6 +348,7 @@
                 const view = ref('welcome');
                 const stage = ref(1);
                 const inflationTriggered = ref(false);
+                const drawnCardIndices = ref([]); // 記錄已抽過的卡牌索引
                 
                 // Student State
                 const myGroupName = ref('第 1 組');
@@ -387,6 +387,7 @@
                 const calculateTotalExpense = () => Object.values(myBudget.value).reduce((a, b) => a + b, 0) * (inflationTriggered.value ? 1.1 : 1);
                 const myBalance = computed(() => INCOME - calculateTotalExpense());
                 const investmentRemaining = computed(() => INITIAL_CAPITAL - Object.values(myInvestment.value).reduce((a, b) => a + b, 0));
+                const isCardDeckEmpty = computed(() => drawnCardIndices.value.length >= FATE_CARDS.length);
 
                 // Helpers
                 const formatMoney = (val) => new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 }).format(val) + ' THB';
@@ -420,8 +421,21 @@
                     nextTick(() => setTimeout(updateCharts, 300));
                 };
 
+                // 單機版也要避免重複抽卡
                 const drawFateCard = () => {
-                    const card = FATE_CARDS[Math.floor(Math.random() * FATE_CARDS.length)];
+                    const availableIndices = FATE_CARDS.map((_, i) => i).filter(i => !drawnCardIndices.value.includes(i));
+                    
+                    if (availableIndices.length === 0) {
+                         alert('卡牌已用盡');
+                         return;
+                    }
+
+                    const randomIndex = Math.floor(Math.random() * availableIndices.length);
+                    const cardIndex = availableIndices[randomIndex];
+                    const card = FATE_CARDS[cardIndex];
+                    
+                    // 記錄已抽過的
+                    drawnCardIndices.value.push(cardIndex);
                     lastDrawnCard.value = card.title;
                     
                     // Update simulated groups
@@ -483,22 +497,75 @@
                         const ctx = document.getElementById('teacherLineChart');
                         if (ctx) {
                             if (teacherLineChartInstance) teacherLineChartInstance.destroy();
-                            // Generate simulation data... (Same logic as online version but fully local)
+                            
                              const sorted = [...simulatedGroups.value].sort((a, b) => b.totalAssets - a.totalAssets);
-                             const targets = sorted.slice(0, 3).concat(sorted.slice(-3));
+                             // Top 3 and Bottom 3
+                             const top3Ids = sorted.slice(0, 3).map(g => g.id);
+                             const bottom3Ids = sorted.slice(-3).map(g => g.id);
+                             const targets = sorted.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
+
                              const years = Array.from({length: 21}, (_, i) => `${i}年`);
                              const datasets = targets.map(g => {
                                 const total = g.totalAssets;
                                 const inv = g.investment;
-                                const rate = 1 + ((inv.savings*0.02 + inv.etf*0.06 + inv.stocks*0.08 + inv.entrepreneurship*0.12) / total);
-                                let data = [];
-                                let current = total;
-                                for(let y=0; y<=20; y++) {
-                                    data.push(Math.round(current));
-                                    current *= rate;
+                                // Weighted return
+                                const weightedReturn = (
+                                    (inv.savings * 0.02) + 
+                                    (inv.etf * 0.06) + 
+                                    (inv.stocks * 0.08) + 
+                                    (inv.entrepreneurship * 0.12)
+                                ) / total;
+                                
+                                const baseRate = 1 + weightedReturn;
+                                
+                                // Risk logic
+                                const entrepreneurialRatio = inv.entrepreneurship / total;
+                                let hasFailed = false;
+                                const seed = (g.id * 11) % 100; 
+                                if (entrepreneurialRatio > 0.3 && seed < 30) {
+                                    hasFailed = true;
                                 }
+                                
+                                let data = [Math.round(total)];
+                                let currentAsset = total;
+                                
+                                for(let y=1; y<=20; y++) {
+                                    if (hasFailed && y >= 10) {
+                                        currentAsset = (inv.savings + inv.etf + inv.stocks) * Math.pow(0.98, y - 10);
+                                        currentAsset = Math.max(currentAsset, total * 0.1);
+                                    } else {
+                                        currentAsset = g.totalAssets * Math.pow(baseRate, y);
+                                    }
+                                    data.push(Math.round(currentAsset));
+                                }
+                                
+                                // Color
+                                const isTop = top3Ids.includes(g.id);
+                                const rank = sorted.findIndex(s => s.id === g.id) + 1;
+                                
+                                let distinctColor;
+                                if (isTop) {
+                                    if(rank === 1) distinctColor = '#059669'; 
+                                    else if(rank === 2) distinctColor = '#10B981';
+                                    else distinctColor = '#6EE7B7';
+                                } else {
+                                    const bottomIndex = bottom3Ids.indexOf(g.id); 
+                                    if(bottomIndex === 2) distinctColor = '#7F1D1D';
+                                    else if(bottomIndex === 1) distinctColor = '#DC2626';
+                                    else distinctColor = '#FCA5A5';
+                                }
+                                
+                                const labelSuffix = hasFailed ? " (風險爆發)" : ` (年化 ${(weightedReturn * 100).toFixed(1)}%)`;
+
                                 return {
-                                    label: g.name, data: data, borderColor: '#10B981', fill: false
+                                    label: `No.${rank} ${g.name}` + labelSuffix,
+                                    data: data,
+                                    borderColor: distinctColor,
+                                    backgroundColor: distinctColor,
+                                    borderWidth: isTop ? 3 : 2,
+                                    borderDash: hasFailed ? [10, 5] : [],
+                                    fill: false,
+                                    tension: 0.4
                                 };
                              });
 
@@ -524,7 +591,7 @@
                 return {
                     view, stage, inflationTriggered,
                     myGroupName, myBudget, myInvestment, myRiskProfile, myTotalAssets, selectedFateCardIndex,
-                    simulatedGroups, lastDrawnCard,
+                    simulatedGroups, lastDrawnCard, drawnCardIndices, isCardDeckEmpty,
                     hardReset, formatMoney, translate, getIcon, getColorClass,
                     calculateExpenseItem, calculateTotalExpense, myBalance, investmentRemaining,
                     applyStudentFateCard, updateStudentChart,
