@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 修改標題：使用電腦 Emoji -->
-    <title>一新中學理財 💻</title>
+    <title>我是大富翁 (單機版)</title>
     
-    <!-- ★★★ 設定自訂 Icon ★★★ -->
+    <!-- Icon -->
     <link rel="icon" type="image/png" href="icon.png">
 
     <!-- Tailwind CSS -->
@@ -17,313 +16,325 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: 只保留 Fredoka 用於裝飾數字和英文，中文使用系統字體 -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        // 中文使用系統預設 (微軟正黑體等)，確保清晰熟悉
+                        sans: ['"Segoe UI"', '"Microsoft JhengHei"', 'sans-serif'],
+                        // 標題英文數字保留可愛風格
+                        display: ['"Fredoka"', 'cursive'],
+                    },
+                    colors: {
+                        retro: {
+                            bg: '#FFF8E7',      
+                            pink: '#FF8FAB',    
+                            green: '#06D6A0',   
+                            yellow: '#FFD166',  
+                            blue: '#118AB2',    
+                            red: '#EF476F',     
+                            dark: '#073B4C',    
+                        }
+                    },
+                    boxShadow: {
+                        'retro': '4px 4px 0px 0px rgba(7, 59, 76, 1)', 
+                        'retro-sm': '2px 2px 0px 0px rgba(7, 59, 76, 1)',
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
         body { 
-            font-family: 'Noto Sans TC', 'Segoe UI', sans-serif; 
-            background-color: #FFFBEB; /* 暖黃色背景 */
-            background-image: radial-gradient(#FEF3C7 1px, transparent 1px);
-            background-size: 20px 20px;
+            /* 確保全域字體設定正確 */
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background-color: #FFF8E7;
+            background-image: radial-gradient(#FFD166 2px, transparent 2px);
+            background-size: 30px 30px;
         }
-        .transition-all { transition: all 0.3s ease; }
         
-        /* 更有趣的卡片懸浮效果 */
-        .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+        .btn-retro {
+            border: 2px solid #073B4C;
+            box-shadow: 4px 4px 0px 0px #073B4C;
+            transition: all 0.1s;
+        }
+        .btn-retro:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px 0px #073B4C;
+        }
 
-        /* 滑桿樣式優化 - 增加點擊區域 */
+        .card-retro {
+            background: white;
+            border: 2px solid #073B4C;
+            border-radius: 1rem;
+            box-shadow: 6px 6px 0px 0px rgba(0,0,0,0.1);
+        }
+
         input[type=range] { 
-            -webkit-appearance: none; background: transparent; cursor: pointer; position: relative; z-index: 20; height: 30px; margin: 10px 0;
+            -webkit-appearance: none; background: transparent; cursor: pointer; position: relative; z-index: 20; height: 30px; margin: 10px 0; width: 100%;
         }
         input[type=range]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: #ffffff; border: 4px solid currentColor; cursor: pointer; margin-top: -10px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); transition: transform 0.1s;
+            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; 
+            background: #FFD166; border: 2px solid #073B4C; 
+            cursor: pointer; margin-top: -10px; box-shadow: 2px 2px 0px #073B4C;
         }
-        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
         input[type=range]::-webkit-slider-runnable-track { 
-            width: 100%; height: 8px; cursor: pointer; background: #e5e7eb; border-radius: 999px; 
+            width: 100%; height: 6px; cursor: pointer; background: #073B4C; border-radius: 4px; 
         }
-        
-        /* 定義滑桿顏色 */
-        .accent-10B981 { color: #10B981; }
-        .accent-3B82F6 { color: #3B82F6; }
-        .accent-F59E0B { color: #F59E0B; }
-        .accent-EF4444 { color: #EF4444; }
-        .accent-8B5CF6 { color: #8B5CF6; }
-        .accent-475569 { color: #475569; }
 
         [v-cloak] { display: none; }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="text-retro-dark font-sans">
 
     <div id="app" v-cloak class="min-h-screen flex flex-col">
         
-        <!-- 導航列 (加入快速切換按鈕) -->
-        <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-100">
-            <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-2">
-                <div class="flex items-center space-x-2 font-bold text-xl text-emerald-600 tracking-wide cursor-pointer" @click="view = 'welcome'">
-                    <i class="fa-solid fa-leaf text-emerald-500"></i>
-                    <span>一新中學理財 <span class="text-slate-400 text-sm font-normal ml-1 hidden sm:inline">| 💻 單機版</span></span>
+        <nav class="bg-white border-b-2 border-retro-dark sticky top-0 z-50 px-4 py-3 shadow-sm">
+            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
+                <div class="flex items-center gap-2 font-bold text-xl tracking-wide cursor-pointer" @click="view = 'welcome'">
+                    <div class="bg-retro-yellow w-10 h-10 rounded-full border-2 border-retro-dark flex items-center justify-center text-xl shadow-retro-sm">💰</div>
+                    <!-- 標題使用 display 字體 (可愛風)，副標題使用 sans (系統字體) -->
+                    <span class="font-display text-retro-dark">我是大富翁 <span class="text-gray-400 text-sm font-sans font-bold ml-1">| 單機版</span></span>
                 </div>
                 
-                <!-- 快速切換視角按鈕 -->
-                <div class="flex space-x-2 text-sm font-medium" v-if="view !== 'welcome'">
+                <div class="flex gap-2 text-sm font-bold font-sans" v-if="view !== 'welcome'">
                     <button @click="view = 'student'" 
-                        :class="view === 'student' ? 'bg-amber-100 text-amber-700' : 'text-slate-500 hover:bg-slate-100'"
-                        class="px-3 py-1.5 rounded-lg transition flex items-center">
-                        <i class="fa-solid fa-user mr-1"></i> 我的資產
+                        :class="view === 'student' ? 'bg-retro-yellow text-retro-dark shadow-retro-sm' : 'bg-white text-gray-400 hover:text-retro-dark'"
+                        class="px-4 py-1.5 rounded-lg border-2 border-retro-dark transition">
+                        個人練習
                     </button>
                     <button @click="view = 'teacher'" 
-                        :class="view === 'teacher' ? 'bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:bg-slate-100'"
-                        class="px-3 py-1.5 rounded-lg transition flex items-center">
-                        <i class="fa-solid fa-chart-line mr-1"></i> 市場模擬 (老師)
+                        :class="view === 'teacher' ? 'bg-retro-green text-white shadow-retro-sm' : 'bg-white text-gray-400 hover:text-retro-dark'"
+                        class="px-4 py-1.5 rounded-lg border-2 border-retro-dark transition">
+                        市場模擬
                     </button>
-                    <div class="w-px h-6 bg-slate-200 mx-1"></div>
-                    <button @click="view = 'welcome'" class="px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition">
+                    <button @click="view = 'welcome'" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-retro-red transition">
                         <i class="fa-solid fa-house"></i>
                     </button>
                 </div>
             </div>
         </nav>
 
-        <!-- 主要內容區 -->
-        <main class="container mx-auto p-4 md:p-8 flex-grow">
+        <main class="container mx-auto p-4 md:p-8 flex-grow flex flex-col items-center justify-center">
             
             <!-- 1. 歡迎畫面 -->
-            <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-fade-in">
-                <div class="text-center space-y-4">
-                    <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold tracking-wider">FINANCIAL LITERACY WORKSHOP</span>
-                    <h1 class="text-4xl md:text-6xl font-bold text-slate-800 tracking-tight">我是大富翁 <span class="text-emerald-500">Offline 💻</span></h1>
-                    <p class="text-slate-500">單機練習模式：可自由切換「個人練習」與「市場模擬」視角。</p>
+            <div v-if="view === 'welcome'" class="flex flex-col items-center justify-center w-full max-w-4xl animate-fade-in">
+                <div class="text-center mb-8">
+                    <span class="bg-retro-dark text-white px-4 py-1 rounded-full text-sm font-bold tracking-widest uppercase mb-2 inline-block font-display">Financial Game</span>
+                    <h1 class="font-display text-5xl md:text-7xl font-bold text-retro-dark drop-shadow-sm">我是大富翁 <span class="text-retro-green">Offline</span></h1>
+                    <p class="text-gray-500 mt-4 font-bold font-sans">單機練習模式：自由切換視角，無需連線。</p>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mt-8">
-                    <button @click="view = 'student'" class="group relative p-8 bg-white rounded-3xl shadow-lg card-hover border-2 border-transparent hover:border-amber-200 text-left overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-full -mr-8 -mt-8 z-0 group-hover:scale-110 transition"></div>
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mb-4 text-2xl">
-                                <i class="fa-solid fa-mobile-screen"></i>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-1 text-slate-800">進入個人練習</h3>
-                            <p class="text-slate-400 text-sm">Student Mode</p>
-                            <p class="text-slate-500 mt-4 text-sm">操作你自己的預算與投資，計算最終資產。</p>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                    <button @click="view = 'student'" class="card-retro p-8 hover:bg-retro-yellow transition group text-left relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-9xl opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-mobile-screen"></i></div>
+                        <h3 class="font-display text-3xl font-bold mb-2">個人練習</h3>
+                        <p class="text-sm opacity-70 font-bold font-display">STUDENT MODE</p>
+                        <p class="mt-4 text-sm font-sans">操作預算與投資，計算個人最終資產。</p>
                     </button>
 
-                    <button @click="view = 'teacher'" class="group relative p-8 bg-white rounded-3xl shadow-lg card-hover border-2 border-transparent hover:border-emerald-200 text-left overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 z-0 group-hover:scale-110 transition"></div>
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-4 text-2xl">
-                                <i class="fa-solid fa-chart-simple"></i>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-1 text-slate-800">查看市場模擬</h3>
-                            <p class="text-slate-400 text-sm">Simulation / Teacher View</p>
-                            <p class="text-slate-500 mt-4 text-sm">觀看 13 組模擬數據的市場變化與長期複利圖表。</p>
-                        </div>
+                    <button @click="view = 'teacher'" class="card-retro p-8 hover:bg-retro-green hover:text-white transition group text-left relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-9xl opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-chart-simple"></i></div>
+                        <h3 class="font-display text-3xl font-bold mb-2">市場模擬</h3>
+                        <p class="text-sm opacity-70 font-bold font-display">SIMULATION VIEW</p>
+                        <p class="mt-4 text-sm font-sans">觀看 13 組模擬數據與長期複利變化。</p>
                     </button>
                 </div>
                 
-                <div class="mt-12">
-                    <button @click="hardReset" class="text-xs text-slate-400 hover:text-red-500 border-b border-transparent hover:border-red-500 transition">
-                        <i class="fa-solid fa-rotate-right mr-1"></i> 清除本機暫存資料
-                    </button>
-                </div>
+                <button @click="hardReset" class="mt-12 text-xs text-gray-400 hover:text-retro-red border-b-2 border-transparent hover:border-retro-red font-bold transition font-sans">
+                    清除暫存 (Reset)
+                </button>
             </div>
 
             <!-- 2. 老師演示模式 (模擬數據) -->
-            <div v-if="view === 'teacher'" class="space-y-6">
-                <!-- 頂部控制列 -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-emerald-500 flex flex-wrap gap-4 justify-between items-center sticky top-20 z-40">
-                    <div class="flex items-center space-x-3">
-                        <div class="bg-emerald-100 p-2 rounded-lg text-emerald-600"><i class="fa-solid fa-chart-pie"></i></div>
+            <div v-if="view === 'teacher'" class="w-full space-y-6 font-sans">
+                <!-- 頂部控制 -->
+                <div class="card-retro p-4 bg-white flex flex-wrap gap-4 justify-between items-center sticky top-20 z-40">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-retro-pink w-10 h-10 rounded-lg border-2 border-retro-dark flex items-center justify-center text-white font-bold text-xl shadow-retro-sm">T</div>
                         <div>
-                            <h2 class="text-lg font-bold text-slate-800">市場模擬看板 (老師視角)</h2>
-                            <p class="text-xs text-slate-400">此處顯示的是系統生成的 13 組模擬數據</p>
+                            <h2 class="font-bold text-lg text-retro-dark">市場模擬</h2>
+                            <p class="text-xs font-bold text-gray-400 uppercase">Simulated Data</p>
                         </div>
                     </div>
-                    <div class="flex bg-slate-100 p-1 rounded-xl">
+                    <div class="flex gap-2 bg-gray-100 p-1.5 rounded-lg border-2 border-gray-200">
                         <button v-for="s in [1, 2, 3]" :key="s" @click="setStage(s)" 
-                            :class="stage === s ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'"
-                            class="px-4 py-2 rounded-lg text-sm font-bold transition">
-                            {{ ['1. 預算', '2. 投資', '3. 總結'][s-1] }}
+                            :class="stage === s ? 'bg-retro-blue text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'"
+                            class="px-4 py-1.5 rounded-md font-bold transition text-sm">
+                            {{ ['1.預算', '2.投資', '3.總結'][s-1] }}
                         </button>
                     </div>
                 </div>
 
-                <!-- 老師控制區 -->
+                <!-- 控制區 -->
                 <div class="flex flex-wrap gap-3">
                     <button v-if="stage === 1" @click="inflationTriggered = !inflationTriggered" 
-                        :class="inflationTriggered ? 'bg-rose-500 text-white ring-4 ring-rose-200' : 'bg-white text-rose-500 border-2 border-rose-100 hover:border-rose-500'"
-                        class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center">
-                        <i class="fa-solid fa-triangle-exclamation mr-2"></i> 
-                        {{ inflationTriggered ? '演示：通膨已觸發' : '演示：觸發通膨' }}
+                        :class="inflationTriggered ? 'bg-retro-red text-white' : 'bg-white text-retro-red'"
+                        class="btn-retro px-6 py-3 rounded-xl font-bold flex items-center">
+                        <i class="fa-solid fa-fire mr-2"></i> 
+                        {{ inflationTriggered ? '模擬：通膨已觸發' : '模擬：觸發通膨' }}
                     </button>
 
                     <button v-if="stage === 2" @click="drawFateCard" 
-                        class="px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 transition flex items-center bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105 active:scale-95">
-                        <i class="fa-solid fa-dice mr-2"></i> 抽取命運卡 (模擬市場)
+                        class="btn-retro bg-retro-pink text-white px-6 py-3 rounded-xl font-bold flex items-center">
+                        <i class="fa-solid fa-star mr-2"></i> 抽取命運卡
                     </button>
                 </div>
 
-                <!-- 老師圖表區 -->
+                <!-- 圖表區 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div v-if="stage === 2" class="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="font-bold text-xl text-slate-800"><i class="fa-solid fa-chart-simple mr-2 text-blue-500"></i> 資產模擬排行</h3>
-                            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">範例數據</span>
-                        </div>
-                        <div v-if="lastDrawnCard" class="mb-6 p-4 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl text-center animate-bounce">
-                            <span class="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1">Market Event</span>
-                            <strong class="text-lg">{{ lastDrawnCard }}</strong>
+                    <div v-if="stage === 2" class="md:col-span-2 card-retro p-6 bg-white">
+                        <h3 class="font-bold text-xl mb-4 border-b-2 border-gray-100 pb-2">資產模擬排行</h3>
+                        <div v-if="lastDrawnCard" class="mb-4 p-3 bg-retro-yellow border-2 border-retro-dark rounded-lg shadow-retro-sm text-center">
+                            <div class="text-xs font-bold opacity-60 uppercase">Event</div>
+                            <div class="font-bold text-lg">{{ lastDrawnCard }}</div>
                         </div>
                         <div class="h-64 relative"><canvas id="teacherAssetChart"></canvas></div>
                     </div>
 
-                    <div v-if="stage === 3" class="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <h3 class="font-bold text-xl text-slate-800 mb-6 text-center">20 年資產模擬 <span class="text-sm font-normal text-slate-400">(前三名 vs 後三名)</span></h3>
+                    <div v-if="stage === 3" class="md:col-span-2 card-retro p-6 bg-white">
+                        <h3 class="font-bold text-xl mb-6 text-center">20 年資產模擬 <span class="text-sm font-normal text-gray-400 block">(前三名 vs 後三名)</span></h3>
                         <div class="h-80 relative"><canvas id="teacherLineChart"></canvas></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. 學生操作介面 (本地計算) -->
-            <div v-if="view === 'student'" class="max-w-md mx-auto pb-24 space-y-6">
+            <!-- 3. 學生操作介面 -->
+            <div v-if="view === 'student'" class="w-full max-w-md pb-24 space-y-6 font-sans">
                 
-                <div class="sticky top-4 z-30 bg-white/95 backdrop-blur p-4 rounded-2xl shadow-lg border border-slate-100 flex justify-between items-center">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mr-3 font-bold">
+                <div class="sticky top-4 z-30 card-retro p-3 bg-white flex justify-between items-center shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-retro-blue border-2 border-retro-dark rounded-full flex items-center justify-center text-white font-bold text-lg">
                             <i class="fa-solid fa-user"></i>
                         </div>
                         <div>
-                            <div class="text-xs text-slate-400">Current Group</div>
-                            <select v-model="myGroupName" class="bg-transparent font-bold text-slate-800 outline-none cursor-pointer">
+                            <div class="text-[10px] font-bold text-gray-400 uppercase">Current</div>
+                            <select v-model="myGroupName" class="bg-transparent font-bold text-retro-dark outline-none cursor-pointer">
                                 <option v-for="i in 13" :key="i" :value="`第 ${i} 組`">第 {{ i }} 組</option>
                             </select>
                         </div>
                     </div>
-                    <!-- 學生手動切換階段 -->
-                    <select v-model.number="stage" class="text-xs bg-slate-800 text-white rounded-lg px-2 py-1 border-none cursor-pointer">
+                    <select v-model.number="stage" class="text-xs font-bold bg-gray-100 border-2 border-gray-200 rounded-lg px-2 py-1 outline-none cursor-pointer">
                         <option :value="1">Step 1: 預算</option>
                         <option :value="2">Step 2: 投資</option>
                         <option :value="3">Step 3: 總結</option>
                     </select>
                 </div>
 
-                <!-- Stage 1: 預算 -->
-                <div v-if="stage === 1" class="bg-white rounded-3xl shadow-sm p-6 space-y-6 border border-slate-100">
+                <!-- Stage 1 -->
+                <div v-if="stage === 1" class="card-retro p-6 space-y-6 bg-white">
                     <button @click="inflationTriggered = !inflationTriggered" 
-                        class="w-full py-3 rounded-xl text-sm font-bold transition border-2 border-dashed flex items-center justify-center"
-                        :class="inflationTriggered ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
-                        <i class="fa-solid fa-triangle-exclamation mr-2"></i> 
-                        {{ inflationTriggered ? '通膨模式：已開啟 (+10%)' : '點此開啟通膨 (跟隨老師)' }}
+                        class="w-full py-3 rounded-xl text-sm font-bold transition border-2 border-dashed border-retro-dark flex items-center justify-center"
+                        :class="inflationTriggered ? 'bg-retro-red text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'">
+                        <i class="fa-solid fa-fire mr-2"></i> 
+                        {{ inflationTriggered ? '通膨模式：已開啟 (+10%)' : '點此開啟通膨' }}
                     </button>
 
-                    <div class="flex justify-between items-end border-b border-slate-100 pb-4">
+                    <div class="flex justify-between items-end border-b-2 border-gray-100 pb-4">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-800">預算規劃</h2>
-                            <p class="text-xs text-slate-400">Monthly Budget</p>
+                            <h2 class="text-xl font-bold text-retro-dark">預算規劃</h2>
+                            <p class="text-xs text-gray-400 font-bold">Budgeting</p>
                         </div>
                         <div class="text-right">
-                            <div class="text-xs text-slate-500">結餘</div>
-                            <div class="text-xl font-mono font-bold" :class="myBalance < 0 ? 'text-rose-500' : 'text-emerald-500'">
+                            <div class="text-xs text-gray-400 font-bold">結餘</div>
+                            <div class="text-2xl font-mono font-bold" :class="myBalance < 0 ? 'text-retro-red' : 'text-retro-green'">
                                 {{ formatMoney(myBalance) }}
                             </div>
                         </div>
                     </div>
 
-                    <!-- 圓餅圖 -->
-                    <div class="h-48 relative flex justify-center">
+                    <div class="h-40 relative flex justify-center">
                         <canvas id="studentPieChart"></canvas>
                         <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none mt-4">
-                             <span class="font-bold text-sm" :class="myBalance < 0 ? 'text-rose-500' : 'text-slate-400'">{{ myBalance < 0 ? '透支' : '剩餘' }}</span>
-                             <span class="font-mono font-bold text-lg text-slate-600">{{ formatMoney(Math.abs(myBalance)) }}</span>
+                             <span class="font-bold text-sm" :class="myBalance < 0 ? 'text-retro-red' : 'text-gray-400'">{{ myBalance < 0 ? '透支' : '剩餘' }}</span>
+                             <span class="font-mono font-bold text-lg text-retro-dark">{{ formatMoney(Math.abs(myBalance)) }}</span>
                         </div>
                     </div>
 
                     <div class="space-y-6">
                         <div v-for="(val, key) in myBudget" :key="key">
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="font-bold text-slate-600 flex items-center">
-                                    <span class="w-6 h-6 rounded-full flex items-center justify-center mr-2 text-white text-xs" :class="`bg-${{food:'emerald-500', transport:'blue-500', entertainment:'amber-500', education:'purple-500', family:'rose-500'}[key]}`">
-                                        <i :class="getIcon(key)"></i>
-                                    </span>
-                                    {{ translate(key) }}
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="font-bold text-retro-dark flex items-center">
+                                    <i :class="getIcon(key)" class="mr-2 w-6 text-center text-gray-400"></i> {{ translate(key) }}
                                 </span>
-                                <span class="font-mono text-slate-500">{{ formatMoney(calculateExpenseItem(val)) }}</span>
+                                <span class="font-mono font-bold text-gray-500">{{ formatMoney(calculateExpenseItem(val)) }}</span>
                             </div>
                             <input type="range" min="0" max="10000" step="500" v-model.number="myBudget[key]" @input="updateStudentChart" class="w-full h-2 rounded-lg" :class="getColorClass(key)">
                         </div>
                     </div>
                 </div>
 
-                <!-- Stage 2: 投資 -->
-                <div v-if="stage === 2" class="bg-white rounded-3xl shadow-sm p-6 space-y-6 border border-slate-100">
-                    <div class="flex justify-between items-end border-b border-slate-100 pb-4">
+                <!-- Stage 2 -->
+                <div v-if="stage === 2" class="card-retro p-6 space-y-6 bg-white">
+                    <div class="flex justify-between items-end border-b-2 border-gray-100 pb-4">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-800">投資配置</h2>
-                            <p class="text-xs text-slate-400">Investment</p>
+                            <h2 class="text-xl font-bold text-retro-dark">投資配置</h2>
+                            <p class="text-xs text-gray-400 font-bold">Investment</p>
                         </div>
                         <div class="text-right">
-                            <div class="text-xs text-slate-500">剩餘資金 (需為 0)</div>
-                            <div class="text-xl font-mono font-bold" :class="investmentRemaining !== 0 ? 'text-rose-500' : 'text-slate-700'">
+                            <div class="text-xs text-gray-400 font-bold">待分配</div>
+                            <div class="text-xl font-mono font-bold" :class="investmentRemaining !== 0 ? 'text-retro-red' : 'text-gray-400'">
                                 {{ formatMoney(investmentRemaining) }}
                             </div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <button @click="myRiskProfile = 'conservative'" :class="myRiskProfile === 'conservative' ? 'ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-400'" class="p-3 rounded-xl border transition text-sm font-bold">
-                            <i class="fa-solid fa-shield-halved mr-1"></i> 穩健型
+                        <button @click="myRiskProfile = 'conservative'" class="btn-retro py-2 rounded-lg font-bold text-sm"
+                            :class="myRiskProfile === 'conservative' ? 'bg-retro-green text-white' : 'bg-white text-gray-400 border-gray-300 shadow-none'">
+                            穩健型 (綠)
                         </button>
-                        <button @click="myRiskProfile = 'aggressive'" :class="myRiskProfile === 'aggressive' ? 'ring-2 ring-rose-500 bg-rose-50 text-rose-700' : 'bg-slate-50 text-slate-400'" class="p-3 rounded-xl border transition text-sm font-bold">
-                            <i class="fa-solid fa-rocket mr-1"></i> 積極型
+                        <button @click="myRiskProfile = 'aggressive'" class="btn-retro py-2 rounded-lg font-bold text-sm"
+                            :class="myRiskProfile === 'aggressive' ? 'bg-retro-red text-white' : 'bg-white text-gray-400 border-gray-300 shadow-none'">
+                            積極型 (紅)
                         </button>
                     </div>
 
                     <div class="space-y-6">
                         <div v-for="(val, key) in myInvestment" :key="key">
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="font-medium text-slate-700">{{ translate(key) }}</span>
-                                <span class="font-mono text-slate-500">{{ formatMoney(val) }}</span>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="font-bold text-retro-dark">{{ translate(key) }}</span>
+                                <span class="font-mono font-bold text-gray-500">{{ formatMoney(val) }}</span>
                             </div>
                             <input type="range" min="0" max="100000" step="5000" v-model.number="myInvestment[key]" class="w-full h-2 rounded-lg accent-slate-600">
                         </div>
                     </div>
                     
-                    <!-- 手動事件觸發 -->
-                    <div class="pt-6 border-t border-slate-100">
-                        <h3 class="font-bold text-slate-700 mb-3 flex items-center">
-                            <i class="fa-solid fa-envelope-open-text mr-2 text-indigo-500"></i> 命運卡 (跟隨老師選擇)
+                    <!-- 手動事件 -->
+                    <div class="pt-6 border-t-2 border-gray-100">
+                        <h3 class="font-bold text-retro-dark mb-3 flex items-center">
+                            <i class="fa-solid fa-envelope-open-text mr-2 text-retro-blue"></i> 命運卡 (跟隨老師選擇)
                         </h3>
-                        <select v-model="selectedFateCardIndex" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 mb-3 text-slate-700 font-medium">
-                            <option :value="-1">-- 請選擇老師抽到的卡 --</option>
+                        <select v-model="selectedFateCardIndex" class="w-full p-3 border-2 border-retro-dark rounded-xl bg-white mb-3 font-bold shadow-retro-sm focus:outline-none">
+                            <option :value="-1">-- 選擇卡牌 --</option>
                             <option v-for="(card, idx) in FATE_CARDS" :key="idx" :value="idx">{{ card.title }}</option>
                         </select>
-                        <button @click="applyStudentFateCard" :disabled="selectedFateCardIndex === -1" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold disabled:bg-slate-200 disabled:text-slate-400 transition">
+                        <button @click="applyStudentFateCard" :disabled="selectedFateCardIndex === -1" class="w-full py-3 btn-retro bg-retro-blue text-white rounded-xl font-bold disabled:bg-gray-200 disabled:text-gray-400 disabled:border-gray-300 disabled:shadow-none">
                             套用效果
                         </button>
                         
-                        <div v-if="myTotalAssets !== INITIAL_CAPITAL" class="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-center">
-                            <p class="text-xs text-indigo-400 uppercase font-bold tracking-wider mb-1">Current Assets</p>
-                            <p class="text-3xl font-mono font-bold text-indigo-600">{{ formatMoney(Math.round(myTotalAssets)) }}</p>
+                        <div v-if="myTotalAssets !== INITIAL_CAPITAL" class="mt-6 p-4 bg-retro-yellow border-2 border-retro-dark rounded-xl text-center shadow-retro-sm">
+                            <p class="text-xs font-bold opacity-60 uppercase tracking-wider">Current Assets</p>
+                            <p class="text-3xl font-mono font-bold text-retro-dark">{{ formatMoney(Math.round(myTotalAssets)) }}</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Stage 3: 結束 -->
-                <div v-if="stage === 3" class="bg-white rounded-3xl shadow-lg p-10 text-center">
-                    <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <i class="fa-solid fa-trophy text-4xl text-yellow-500"></i>
+                <!-- Stage 3 -->
+                <div v-if="stage === 3" class="card-retro p-8 text-center bg-white relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-4 bg-retro-yellow border-b-2 border-retro-dark"></div>
+                    <i class="fa-solid fa-trophy text-6xl text-retro-yellow drop-shadow-md mb-4 mt-4"></i>
+                    <h2 class="text-2xl font-bold mb-2 font-display">GAME OVER!</h2>
+                    <div class="py-4 border-y-2 border-dashed border-gray-200 my-4">
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">Final Score</p>
+                        <p class="text-4xl font-mono font-bold text-retro-blue mt-2">{{ formatMoney(Math.round(myTotalAssets)) }}</p>
                     </div>
-                    <h2 class="text-2xl font-bold mb-2 text-slate-800">課程結束！</h2>
-                    <p class="text-slate-500 text-sm mb-6">Congratulations!</p>
-                    <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                        <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Final Result</p>
-                        <p class="text-4xl font-mono font-bold text-slate-800">{{ formatMoney(Math.round(myTotalAssets)) }}</p>
-                    </div>
-                    <p class="text-slate-400 text-xs mt-6">請舉手回報此數字給老師進行結算。</p>
+                    <p class="text-gray-400 text-xs font-bold">請回報分數給老師</p>
                 </div>
             </div>
         </main>
@@ -349,9 +360,8 @@
                 const view = ref('welcome');
                 const stage = ref(1);
                 const inflationTriggered = ref(false);
-                const drawnCardIndices = ref([]); // 記錄已抽過的卡牌索引
+                const drawnCardIndices = ref([]); 
                 
-                // Student State
                 const myGroupName = ref('第 1 組');
                 const myBudget = ref({ food: 6000, transport: 3000, entertainment: 2000, education: 4000, family: 5000 });
                 const myInvestment = ref({ savings: 25000, etf: 25000, stocks: 25000, entrepreneurship: 25000 });
@@ -359,11 +369,9 @@
                 const myTotalAssets = ref(INITIAL_CAPITAL);
                 const selectedFateCardIndex = ref(-1);
 
-                // Teacher Simulated Data
                 const simulatedGroups = ref([]);
                 const lastDrawnCard = ref(null);
 
-                // Init Simulation Data for Teacher
                 const initSimData = () => {
                     simulatedGroups.value = Array.from({ length: 13 }, (_, i) => ({
                         id: i + 1,
@@ -375,7 +383,6 @@
                 };
                 initSimData();
 
-                // Clean Reset
                 const hardReset = () => {
                     if(confirm("確定清除所有設定並重置？")) {
                         localStorage.clear();
@@ -383,25 +390,21 @@
                     }
                 };
 
-                // Computed
                 const calculateExpenseItem = (val) => inflationTriggered.value ? val * 1.1 : val;
                 const calculateTotalExpense = () => Object.values(myBudget.value).reduce((a, b) => a + b, 0) * (inflationTriggered.value ? 1.1 : 1);
                 const myBalance = computed(() => INCOME - calculateTotalExpense());
                 const investmentRemaining = computed(() => INITIAL_CAPITAL - Object.values(myInvestment.value).reduce((a, b) => a + b, 0));
                 const isCardDeckEmpty = computed(() => drawnCardIndices.value.length >= FATE_CARDS.length);
 
-                // Helpers
                 const formatMoney = (val) => new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 }).format(val) + ' THB';
                 const translate = (key) => ({ food: '食物', transport: '交通', entertainment: '娛樂', education: '學習', family: '家庭', savings: '定存', etf: 'ETF', stocks: '股票', entrepreneurship: '創業' }[key] || key);
                 const getIcon = (key) => `fa-solid ${{ food: 'fa-bowl-food', transport: 'fa-bus', entertainment: 'fa-gamepad', education: 'fa-book', family: 'fa-house' }[key] || 'fa-coins'}`;
                 const getColorClass = (key) => `accent-${{food:'10B981', transport:'3B82F6', entertainment:'F59E0B', education:'8B5CF6', family:'EF4444'}[key]}`;
 
-                // Student Logic
                 const applyStudentFateCard = () => {
                     if(selectedFateCardIndex.value === -1) return;
                     const card = FATE_CARDS[selectedFateCardIndex.value];
                     
-                    // Simple calculation for student
                     const inv = myInvestment.value;
                     const newInv = {
                         savings: inv.savings * card.effect.savings,
@@ -409,20 +412,18 @@
                         stocks: inv.stocks * card.effect.stocks,
                         entrepreneurship: inv.entrepreneurship * card.effect.entrepreneurship
                     };
-                    myInvestment.value = newInv; // Update local state
+                    myInvestment.value = newInv; 
                     myTotalAssets.value = Object.values(newInv).reduce((a, b) => a + b, 0);
                     
                     alert(`已套用：${card.title}\n資產更新！`);
                     selectedFateCardIndex.value = -1;
                 };
 
-                // Teacher Logic (Simulated)
                 const setStage = (s) => {
                     stage.value = s;
                     nextTick(() => setTimeout(updateCharts, 300));
                 };
 
-                // 單機版也要避免重複抽卡
                 const drawFateCard = () => {
                     const availableIndices = FATE_CARDS.map((_, i) => i).filter(i => !drawnCardIndices.value.includes(i));
                     
@@ -435,11 +436,9 @@
                     const cardIndex = availableIndices[randomIndex];
                     const card = FATE_CARDS[cardIndex];
                     
-                    // 記錄已抽過的
                     drawnCardIndices.value.push(cardIndex);
                     lastDrawnCard.value = card.title;
                     
-                    // Update simulated groups
                     simulatedGroups.value.forEach(g => {
                         const inv = g.investment;
                         g.investment = {
@@ -453,14 +452,13 @@
                     nextTick(updateCharts);
                 };
 
-                // Charts
                 let studentChartInstance = null;
                 const updateStudentChart = () => {
                     const ctx = document.getElementById('studentPieChart');
                     if (!ctx) return;
                     
                     const dataValues = Object.values(myBudget.value);
-                    const bgColors = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EF4444'];
+                    const bgColors = ['#FFD166', '#118AB2', '#EF476F', '#06D6A0', '#073B4C'];
 
                     if (studentChartInstance) {
                         studentChartInstance.data.datasets[0].data = dataValues;
@@ -468,7 +466,7 @@
                     } else {
                         studentChartInstance = new Chart(ctx, {
                             type: 'doughnut',
-                            data: { labels: Object.keys(myBudget.value).map(translate), datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 0 }] },
+                            data: { labels: Object.keys(myBudget.value).map(translate), datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 2, borderColor: '#073B4C' }] },
                             options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
                         });
                     }
@@ -487,7 +485,7 @@
                                 type: 'bar',
                                 data: {
                                     labels: simulatedGroups.value.map(g => g.name),
-                                    datasets: [{ label: '總資產', data: simulatedGroups.value.map(g => g.totalAssets), backgroundColor: '#3B82F6' }]
+                                    datasets: [{ label: '總資產', data: simulatedGroups.value.map(g => g.totalAssets), backgroundColor: '#118AB2', borderWidth: 2, borderColor: '#073B4C' }]
                                 },
                                 options: { responsive: true, maintainAspectRatio: false }
                             });
@@ -498,14 +496,16 @@
                         const ctx = document.getElementById('teacherLineChart');
                         if (ctx) {
                             if (teacherLineChartInstance) teacherLineChartInstance.destroy();
-                            // Generate simulation data... (Same logic as online version but fully local)
+                            
                              const sorted = [...simulatedGroups.value].sort((a, b) => b.totalAssets - a.totalAssets);
-                             const targets = sorted.slice(0, 3).concat(sorted.slice(-3));
+                             const top3Ids = sorted.slice(0, 3).map(g => g.id);
+                             const bottom3Ids = sorted.slice(-3).map(g => g.id);
+                             const targets = sorted.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
+
                              const years = Array.from({length: 21}, (_, i) => `${i}年`);
                              const datasets = targets.map(g => {
                                 const total = g.totalAssets;
                                 const inv = g.investment;
-                                // Weighted return
                                 const weightedReturn = (
                                     (inv.savings * 0.02) + 
                                     (inv.etf * 0.06) + 
@@ -515,7 +515,6 @@
                                 
                                 const baseRate = 1 + weightedReturn;
                                 
-                                // Risk logic (Same as Online)
                                 const entrepreneurialRatio = inv.entrepreneurship / total;
                                 let hasFailed = false;
                                 const seed = (g.id * 11) % 100; 
@@ -536,20 +535,19 @@
                                     data.push(Math.round(currentAsset));
                                 }
                                 
-                                // Color
                                 const isTop = top3Ids.includes(g.id);
                                 const rank = sorted.findIndex(s => s.id === g.id) + 1;
                                 
                                 let distinctColor;
                                 if (isTop) {
-                                    if(rank === 1) distinctColor = '#059669'; 
-                                    else if(rank === 2) distinctColor = '#10B981';
-                                    else distinctColor = '#6EE7B7';
+                                    if(rank === 1) distinctColor = '#06D6A0'; 
+                                    else if(rank === 2) distinctColor = '#118AB2';
+                                    else distinctColor = '#FFD166';
                                 } else {
                                     const bottomIndex = bottom3Ids.indexOf(g.id); 
-                                    if(bottomIndex === 2) distinctColor = '#7F1D1D';
-                                    else if(bottomIndex === 1) distinctColor = '#DC2626';
-                                    else distinctColor = '#FCA5A5';
+                                    if(bottomIndex === 2) distinctColor = '#073B4C';
+                                    else if(bottomIndex === 1) distinctColor = '#EF476F';
+                                    else distinctColor = '#FF8FAB';
                                 }
                                 
                                 const labelSuffix = hasFailed ? " (風險爆發)" : ` (年化 ${(weightedReturn * 100).toFixed(1)}%)`;
@@ -559,7 +557,7 @@
                                     data: data,
                                     borderColor: distinctColor,
                                     backgroundColor: distinctColor,
-                                    borderWidth: isTop ? 3 : 2,
+                                    borderWidth: isTop ? 4 : 2,
                                     borderDash: hasFailed ? [10, 5] : [],
                                     fill: false,
                                     tension: 0.4
