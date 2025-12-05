@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一新中學理財 v3.3 (最終修復版)</title>
+    <title>一新中學理財 v3.5 (穩定版)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,7 +50,7 @@
         <nav class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-50">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-2 font-bold text-lg">
-                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.3</span>
+                    <span class="bg-blue-500 text-white px-2 py-1 rounded text-sm">v3.5</span>
                     <span class="hidden md:inline">一新中學理財 (雲端版)</span>
                     <div class="flex items-center ml-4 text-xs font-normal">
                         <span class="status-dot" :class="dbConnected ? 'status-online' : 'status-offline'"></span>
@@ -92,7 +92,6 @@
                     </button>
                 </div>
                 
-                <!-- 強制清除按鈕 -->
                 <div class="mt-8 text-center">
                     <button @click="forceClear" class="text-xs text-gray-400 underline hover:text-red-500">
                         按鈕沒反應？點此重置系統
@@ -101,9 +100,9 @@
             </div>
         </div>
 
-        <!-- 2. 學生選組大廳 (Student Lobby) -->
-        <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh] bg-blue-50">
-            <h2 class="text-2xl font-bold mb-2 text-center">👋 歡迎加入！</h2>
+        <!-- 2. 學生選組大廳 -->
+        <div v-if="view === 'student-lobby'" class="container mx-auto p-4 md:p-6 flex flex-col items-center justify-center min-h-[80vh] bg-yellow-50">
+            <h2 class="text-2xl font-bold mb-2 text-center text-yellow-800">👋 歡迎加入！</h2>
             <p class="text-gray-500 mb-8 text-center">房間代碼: <span class="font-bold text-blue-600">{{ sessionCode }}</span></p>
             
             <h3 class="text-lg font-bold mb-4">請點擊選擇你的組別：</h3>
@@ -117,7 +116,7 @@
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
                 <button v-for="(g, idx) in sessionData.groups" :key="idx" 
                     @click="confirmGroupSelection(idx)"
-                    class="p-4 rounded-xl border-2 hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600 transition text-lg font-bold text-slate-600 border-slate-200 shadow-sm bg-white">
+                    class="p-4 rounded-xl border-2 hover:bg-yellow-100 hover:border-yellow-500 hover:text-yellow-800 transition text-lg font-bold text-slate-600 border-slate-200 shadow-sm bg-white">
                     {{ g.name }}
                 </button>
             </div>
@@ -150,11 +149,14 @@
                     {{ sessionData.inflationTriggered ? '取消通膨' : '觸發通膨' }}
                 </button>
 
-                <button v-if="sessionData.stage === 2" @click="drawFateCard" :disabled="isCardDeckEmpty"
-                    :class="isCardDeckEmpty ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
+                <!-- v3.5 修正：增加 isDrawing 狀態顯示 -->
+                <button v-if="sessionData.stage === 2" @click="drawFateCard" :disabled="isCardDeckEmpty || isProcessing"
+                    :class="(isCardDeckEmpty || isProcessing) ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
                     class="px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center text-white">
-                    <i class="fa-solid fa-dice mr-2"></i> 
-                    {{ isCardDeckEmpty ? '卡牌已用盡' : `抽取命運卡 (${sessionData.drawnCardIndices.length}/${FATE_CARDS.length})` }}
+                    <i class="fa-solid" :class="isProcessing ? 'fa-spinner fa-spin' : 'fa-dice'"></i> 
+                    <span class="ml-2">
+                        {{ isProcessing ? '處理中...' : (isCardDeckEmpty ? '卡牌已用盡' : `抽取命運卡 (${sessionData.drawnCardIndices.length}/${FATE_CARDS.length})`) }}
+                    </span>
                 </button>
                 
                 <button @click="resetGame" class="ml-auto px-4 py-2 text-sm text-gray-400 hover:text-red-500 underline">重置數據</button>
@@ -182,7 +184,6 @@
                     <div class="md:col-span-1 bg-white p-6 rounded-xl shadow-sm">
                         <h3 class="font-bold mb-4">即時資產排行</h3>
                         
-                        <!-- 老師端顯示最新事件 -->
                         <div v-if="sessionData.lastDrawnCard" class="mb-4 p-4 bg-indigo-600 text-white rounded-xl shadow-md text-center animate-pulse">
                             <div class="text-xs opacity-75 mb-1"><i class="fa-solid fa-bolt"></i> 最新市場事件</div>
                             <div class="text-xl font-bold">{{ sessionData.lastDrawnCard }}</div>
@@ -244,19 +245,6 @@
                         <div class="text-xl font-mono font-bold" :class="myBalance < 0 ? 'text-red-500' : 'text-green-500'">
                             {{ formatMoney(myBalance) }}
                         </div>
-                    </div>
-                </div>
-
-                <!-- 圓餅圖容器 -->
-                <div class="h-48 relative flex justify-center">
-                    <canvas id="studentPieChart"></canvas>
-                    <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none mt-4">
-                        <span class="font-bold text-sm" :class="myBalance < 0 ? 'text-rose-500' : 'text-slate-600'">
-                            {{ myBalance < 0 ? '透支' : '剩餘' }}
-                        </span>
-                        <span class="font-mono font-bold text-lg" :class="myBalance < 0 ? 'text-rose-500' : 'text-slate-500'">
-                            {{ formatMoney(Math.abs(myBalance)) }}
-                        </span>
                     </div>
                 </div>
 
@@ -383,6 +371,7 @@
                 const myGroupIndex = ref(null); 
                 const isProcessing = ref(false);
                 const userType = ref('');
+                const randomClientId = ref(Math.floor(Math.random() * 10000)); // 隨機ID證明獨立性
                 
                 const sessionData = ref({
                     stage: 1,
@@ -412,11 +401,10 @@
                         db = getFirestore(app);
                         dbConnected.value = true;
 
-                        // V3.3 絕殺：強制清除記憶
-                        localStorage.removeItem('yixinGroup'); 
+                        // V3.4 絕殺：更換 key 名稱強制失效
+                        localStorage.removeItem('yixin_v3_group'); 
                         
-                        // 我們也不再自動連線 session，只幫忙填代碼
-                        const savedSession = localStorage.getItem('yixinSession');
+                        const savedSession = localStorage.getItem('yixin_v3_session');
                         if (savedSession) {
                             sessionCodeInput.value = savedSession;
                         }
@@ -437,7 +425,12 @@
                     unsubscribe = onSnapshot(docRef, (docSnap) => {
                         if (docSnap.exists()) {
                             const remoteData = docSnap.data();
+                            // 防呆：如果雲端資料缺損，使用預設值補上
                             if(!remoteData.groups) remoteData.groups = JSON.parse(JSON.stringify(defaultGroups));
+                            // 確保投資物件結構完整
+                            remoteData.groups.forEach(g => {
+                                if(!g.investment) g.investment = { savings: 25000, etf: 25000, stocks: 25000, entrepreneurship: 25000 };
+                            });
                             sessionData.value = remoteData;
                             
                             // 學生連線後，如果還沒選組，強制停在 lobby
@@ -474,13 +467,13 @@
                             
                             connectToSession(formattedCode);
                             view.value = 'teacher';
-                            localStorage.setItem('yixinSession', formattedCode); 
+                            localStorage.setItem('yixin_v3_session', formattedCode); 
                             
-                            // ★★★ 老師登入後，強制觸發圖表初始化 ★★★
-                            nextTick(() => {
-                                setTimeout(() => { // 給一點緩衝時間讓 DOM 渲染
+                            // ★★★ v3.5 修正：延遲後確保圖表渲染 ★★★
+                            nextTick(() => { 
+                                setTimeout(() => {
                                     updateCharts(); 
-                                }, 500);
+                                }, 300); 
                             });
 
                         } catch(e) {
@@ -507,12 +500,12 @@
                         if (docSnap.exists()) {
                             sessionCode.value = formattedCode;
                             
-                            // ★★★ 學生登入絕殺：強制歸零組別 ★★★
+                            // ★★★ 強制歸零 ★★★
                             myGroupIndex.value = null;
                             
                             connectToSession(formattedCode);
                             view.value = 'student-lobby';
-                            localStorage.setItem('yixinSession', formattedCode);
+                            localStorage.setItem('yixin_v3_session', formattedCode);
                         } else {
                             alert(`找不到房間「${formattedCode}」\n請確認老師已建立。`);
                         }
@@ -526,13 +519,11 @@
                 const confirmGroupSelection = (idx) => {
                     myGroupIndex.value = idx;
                     view.value = 'student-game';
-                    // V3.3 修正：不再存到 LocalStorage
                     nextTick(updateStudentChart);
                 };
 
                 const logout = () => {
-                    localStorage.removeItem('yixinSession');
-                    localStorage.removeItem('yixinGroup'); 
+                    localStorage.removeItem('yixin_v3_session');
                     view.value = 'welcome';
                     sessionCodeInput.value = '';
                     sessionCode.value = '';
@@ -565,8 +556,11 @@
                 };
 
                 const drawFateCard = async () => {
+                    if (isProcessing.value) return;
                     const availableIndices = FATE_CARDS.map((_, i) => i).filter(i => !sessionData.value.drawnCardIndices.includes(i));
                     if (availableIndices.length === 0) return alert("卡牌已用盡");
+
+                    isProcessing.value = true; // 按鈕防呆
 
                     const idx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
                     const card = FATE_CARDS[idx];
@@ -589,6 +583,8 @@
                         drawnCardIndices: [...sessionData.value.drawnCardIndices, idx],
                         round: sessionData.value.round + 1
                     });
+
+                    isProcessing.value = false;
                 };
 
                 const resetGame = async () => {
@@ -663,6 +659,10 @@
                 const updateCharts = () => {
                     if (view.value !== 'teacher') return;
 
+                    // v3.5 修正：確保資料結構安全，避免空值導致崩潰
+                    const groups = sessionData.value.groups;
+                    if (!groups || groups.length === 0) return;
+
                     // Bar Chart (Stage 2)
                     if (sessionData.value.stage === 2) {
                         const ctx = document.getElementById('teacherAssetChart');
@@ -671,12 +671,12 @@
                             teacherAssetChartInstance = new Chart(ctx, {
                                 type: 'bar',
                                 data: {
-                                    labels: sessionData.value.groups.map(g => g.name),
+                                    labels: groups.map(g => g.name),
                                     datasets: [
-                                        { label: '儲蓄', data: sessionData.value.groups.map(g => g.investment.savings), backgroundColor: '#10B981', stack: 'Stack 0' },
-                                        { label: 'ETF', data: sessionData.value.groups.map(g => g.investment.etf), backgroundColor: '#3B82F6', stack: 'Stack 0' },
-                                        { label: '股票', data: sessionData.value.groups.map(g => g.investment.stocks), backgroundColor: '#F59E0B', stack: 'Stack 0' },
-                                        { label: '創業', data: sessionData.value.groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF4444', stack: 'Stack 0' },
+                                        { label: '儲蓄', data: groups.map(g => g.investment.savings), backgroundColor: '#10B981', stack: 'Stack 0' },
+                                        { label: 'ETF', data: groups.map(g => g.investment.etf), backgroundColor: '#3B82F6', stack: 'Stack 0' },
+                                        { label: '股票', data: groups.map(g => g.investment.stocks), backgroundColor: '#F59E0B', stack: 'Stack 0' },
+                                        { label: '創業', data: groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF4444', stack: 'Stack 0' },
                                     ]
                                 },
                                 options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
@@ -690,10 +690,10 @@
                         if (ctx) {
                             if (teacherLineChartInstance) teacherLineChartInstance.destroy();
                             
-                            const sorted = [...sessionData.value.groups].sort((a, b) => b.totalAssets - a.totalAssets);
+                            const sorted = [...groups].sort((a, b) => b.totalAssets - a.totalAssets);
                             const top3Ids = sorted.slice(0, 3).map(g => g.id);
                             const bottom3Ids = sorted.slice(-3).map(g => g.id);
-                            const targets = sessionData.value.groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
+                            const targets = groups.filter(g => top3Ids.includes(g.id) || bottom3Ids.includes(g.id));
 
                             const years = Array.from({length: 21}, (_, i) => `${i}年`);
                             const datasets = targets.map(g => {
@@ -726,14 +726,13 @@
 
                             teacherLineChartInstance = new Chart(ctx, {
                                 type: 'line',
-                                data: { labels: years, datasets: chartDatasets },
+                                data: { labels: years, datasets: datasets },
                                 options: { responsive: true, maintainAspectRatio: false }
                             });
                         }
                     }
                 };
 
-                // ★★★ 關鍵修正：確保在任何資料變動時都嘗試更新圖表 ★★★
                 watch(() => sessionData.value, () => {
                     nextTick(updateCharts);
                 }, { deep: true });
@@ -746,14 +745,14 @@
                 watch(view, (newVal) => {
                     if (newVal === 'teacher') {
                         nextTick(() => {
-                            setTimeout(updateCharts, 300); // 延遲一點點確保 DOM 準備好
+                            setTimeout(updateCharts, 300); 
                         });
                     }
                 });
 
                 return {
                     view, sessionCodeInput, sessionCode, dbConnected,
-                    sessionData, myGroupIndex, myGroup, isProcessing, userType,
+                    sessionData, myGroupIndex, myGroup, isProcessing, userType, randomClientId,
                     handleTeacherLogin, handleStudentLogin, confirmGroupSelection, logout, cleanInput, forceClear,
                     updateStage, toggleInflation, drawFateCard, resetGame,
                     saveMyGroupData, setRisk, updateStudentChart,
