@@ -6,7 +6,8 @@
     <title>一新中學理財 (單機版)</title>
     
     <!-- ★★★ 設定自訂 Icon ★★★ -->
-    <link rel="icon" type="image/jpeg" href="icon.jpg">
+    <!-- 已修改為 icon.png -->
+    <link rel="icon" type="image/png" href="icon.png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -59,16 +60,29 @@
 
     <div id="app" v-cloak class="min-h-screen flex flex-col">
         
-        <!-- 導航列 (更清爽的白色) -->
+        <!-- 導航列 (加入快速切換按鈕) -->
         <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-100">
-            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center space-x-2 font-bold text-xl text-emerald-600 tracking-wide">
+            <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-2">
+                <div class="flex items-center space-x-2 font-bold text-xl text-emerald-600 tracking-wide cursor-pointer" @click="view = 'welcome'">
                     <i class="fa-solid fa-leaf text-emerald-500"></i>
                     <span>一新中學理財 <span class="text-slate-400 text-sm font-normal ml-1 hidden sm:inline">| 單機版</span></span>
                 </div>
-                <div class="space-x-1 text-sm font-medium">
-                    <button @click="view = 'welcome'" class="px-4 py-2 rounded-full text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 transition">
-                        <i class="fa-solid fa-house mr-1"></i> 回首頁
+                
+                <!-- 快速切換視角按鈕 -->
+                <div class="flex space-x-2 text-sm font-medium" v-if="view !== 'welcome'">
+                    <button @click="view = 'student'" 
+                        :class="view === 'student' ? 'bg-amber-100 text-amber-700' : 'text-slate-500 hover:bg-slate-100'"
+                        class="px-3 py-1.5 rounded-lg transition flex items-center">
+                        <i class="fa-solid fa-user mr-1"></i> 我的資產
+                    </button>
+                    <button @click="view = 'teacher'" 
+                        :class="view === 'teacher' ? 'bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:bg-slate-100'"
+                        class="px-3 py-1.5 rounded-lg transition flex items-center">
+                        <i class="fa-solid fa-chart-line mr-1"></i> 市場模擬 (老師)
+                    </button>
+                    <div class="w-px h-6 bg-slate-200 mx-1"></div>
+                    <button @click="view = 'welcome'" class="px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-house"></i>
                     </button>
                 </div>
             </div>
@@ -82,31 +96,31 @@
                 <div class="text-center space-y-4">
                     <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold tracking-wider">FINANCIAL LITERACY WORKSHOP</span>
                     <h1 class="text-4xl md:text-6xl font-bold text-slate-800 tracking-tight">理財體驗課 <span class="text-emerald-500">Offline</span></h1>
-                    <p class="text-slate-500">無需網路連線，隨時隨地開始體驗。</p>
+                    <p class="text-slate-500">單機練習模式：可自由切換「個人練習」與「市場模擬」視角。</p>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mt-8">
-                    <button @click="view = 'teacher'" class="group relative p-8 bg-white rounded-3xl shadow-lg card-hover border-2 border-transparent hover:border-emerald-200 text-left overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 z-0 group-hover:scale-110 transition"></div>
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-4 text-2xl">
-                                <i class="fa-solid fa-chalkboard-user"></i>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-1 text-slate-800">我是老師</h3>
-                            <p class="text-slate-400 text-sm">Teacher Dashboard</p>
-                            <p class="text-slate-500 mt-4 text-sm">用於大螢幕演示、抽卡、展示全班模擬結果。</p>
-                        </div>
-                    </button>
-                    
                     <button @click="view = 'student'" class="group relative p-8 bg-white rounded-3xl shadow-lg card-hover border-2 border-transparent hover:border-amber-200 text-left overflow-hidden">
                         <div class="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-full -mr-8 -mt-8 z-0 group-hover:scale-110 transition"></div>
                         <div class="relative z-10">
                             <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mb-4 text-2xl">
                                 <i class="fa-solid fa-mobile-screen"></i>
                             </div>
-                            <h3 class="text-2xl font-bold mb-1 text-slate-800">我是學生</h3>
-                            <p class="text-slate-400 text-sm">Student Group</p>
-                            <p class="text-slate-500 mt-4 text-sm">用於個人操作、計算資產、紀錄小組決策。</p>
+                            <h3 class="text-2xl font-bold mb-1 text-slate-800">進入個人練習</h3>
+                            <p class="text-slate-400 text-sm">Student Mode</p>
+                            <p class="text-slate-500 mt-4 text-sm">操作你自己的預算與投資，計算最終資產。</p>
+                        </div>
+                    </button>
+
+                    <button @click="view = 'teacher'" class="group relative p-8 bg-white rounded-3xl shadow-lg card-hover border-2 border-transparent hover:border-emerald-200 text-left overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 z-0 group-hover:scale-110 transition"></div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-4 text-2xl">
+                                <i class="fa-solid fa-chart-simple"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1 text-slate-800">查看市場模擬</h3>
+                            <p class="text-slate-400 text-sm">Simulation / Teacher View</p>
+                            <p class="text-slate-500 mt-4 text-sm">觀看 13 組模擬數據的市場變化與長期複利圖表。</p>
                         </div>
                     </button>
                 </div>
@@ -123,10 +137,10 @@
                 <!-- 頂部控制列 -->
                 <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-emerald-500 flex flex-wrap gap-4 justify-between items-center sticky top-20 z-40">
                     <div class="flex items-center space-x-3">
-                        <div class="bg-emerald-100 p-2 rounded-lg text-emerald-600"><i class="fa-solid fa-chalkboard-user"></i></div>
+                        <div class="bg-emerald-100 p-2 rounded-lg text-emerald-600"><i class="fa-solid fa-chart-pie"></i></div>
                         <div>
-                            <h2 class="text-lg font-bold text-slate-800">老師演示模式</h2>
-                            <p class="text-xs text-slate-400">模擬數據展示</p>
+                            <h2 class="text-lg font-bold text-slate-800">市場模擬看板 (老師視角)</h2>
+                            <p class="text-xs text-slate-400">此處顯示的是系統生成的 13 組模擬數據</p>
                         </div>
                     </div>
                     <div class="flex bg-slate-100 p-1 rounded-xl">
@@ -149,7 +163,7 @@
 
                     <button v-if="stage === 2" @click="drawFateCard" 
                         class="px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 transition flex items-center bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105 active:scale-95">
-                        <i class="fa-solid fa-dice mr-2"></i> 抽取命運卡
+                        <i class="fa-solid fa-dice mr-2"></i> 抽取命運卡 (模擬市場)
                     </button>
                 </div>
 
