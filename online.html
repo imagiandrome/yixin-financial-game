@@ -41,6 +41,7 @@
                     boxShadow: {
                         'retro': '4px 4px 0px 0px rgba(7, 59, 76, 1)', 
                         'retro-sm': '2px 2px 0px 0px rgba(7, 59, 76, 1)',
+                        'retro-xs': '1px 1px 0px 0px rgba(7, 59, 76, 1)',
                     }
                 }
             }
@@ -73,6 +74,23 @@
             box-shadow: none;
             transform: none;
             cursor: not-allowed;
+        }
+
+        /* 小按鈕樣式 (用於階段切換) */
+        .btn-retro-sm {
+            border: 2px solid #073B4C;
+            box-shadow: 2px 2px 0px 0px #073B4C;
+            transition: all 0.1s;
+        }
+        .btn-retro-sm:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px 0px #073B4C;
+        }
+        .btn-retro-sm.active {
+            background-color: #118AB2; /* retro-blue */
+            color: white;
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px 0px #073B4C;
         }
 
         .card-retro {
@@ -152,8 +170,8 @@
                 <p class="text-gray-500 font-bold">請輸入老師提供的代碼加入房間</p>
             </div>
             
-            <div class="card-retro p-8 w-full max-w-md relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-4 bg-retro-blue border-b-2 border-retro-dark"></div>
+            <div class="card-retro p-8 w-full max-w-md relative">
+                <div class="absolute top-0 left-0 w-full h-4 bg-retro-blue rounded-t-xl border-b-2 border-retro-dark"></div>
                 
                 <div class="mb-8 mt-4">
                     <label class="block text-sm font-bold text-retro-dark mb-2">遊戲代碼 (Code)</label>
@@ -228,10 +246,11 @@
                         <p class="text-xs font-bold text-gray-400 uppercase">Room: {{ sessionCode }}</p>
                     </div>
                 </div>
-                <div class="flex gap-2 bg-gray-100 p-1.5 rounded-lg border-2 border-gray-200">
+                <!-- 階段切換按鈕優化 -->
+                <div class="flex gap-3 bg-gray-50 p-2 rounded-xl border-2 border-gray-200">
                     <button v-for="s in [1, 2, 3]" :key="s" @click="updateStage(s)" 
-                        :class="sessionData.stage === s ? 'bg-retro-blue text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'"
-                        class="px-4 py-1.5 rounded-md font-bold transition text-sm">
+                        :class="sessionData.stage === s ? 'active' : 'bg-white text-gray-500 hover:text-retro-dark'"
+                        class="btn-retro-sm px-4 py-2 rounded-lg font-bold transition text-sm">
                         {{ ['1.預算', '2.投資', '3.總結'][s-1] }}
                     </button>
                 </div>
@@ -416,7 +435,7 @@
                             <span class="font-mono font-bold text-gray-500">{{ formatMoney(val) }}</span>
                         </div>
                         <input type="range" min="0" max="100000" step="5000" 
-                            v-model.number="myInvestment[key]" 
+                            v-model.number="myGroup.investment[key]" 
                             @change="saveMyGroupData"
                             class="w-full h-2 rounded-lg accent-slate-600">
                     </div>
@@ -552,6 +571,7 @@
                         if (docSnap.exists()) {
                             const remoteData = docSnap.data();
                             if(!remoteData.groups) remoteData.groups = JSON.parse(JSON.stringify(defaultGroups));
+                            // 確保投資物件結構完整 (防止舊資料報錯)
                             remoteData.groups.forEach(g => {
                                 if(!g.investment) g.investment = { savings: 25000, etf: 25000, stocks: 25000, entrepreneurship: 25000 };
                             });
@@ -671,6 +691,9 @@
                 };
 
                 const updateStage = async (s) => {
+                    // 立即本地更新 (Optimistic UI)
+                    sessionData.value.stage = s;
+                    
                     const docRef = doc(db, "sessions", sessionCode.value);
                     await updateDoc(docRef, { stage: s });
                     setTimeout(updateCharts, 500); 
@@ -792,9 +815,14 @@
                                 type: 'bar',
                                 data: {
                                     labels: sessionData.value.groups.map(g => g.name),
-                                    datasets: [{ label: '總資產', data: sessionData.value.groups.map(g => g.totalAssets), backgroundColor: '#118AB2', borderWidth: 2, borderColor: '#073B4C' }]
+                                    datasets: [
+                                        { label: '儲蓄', data: sessionData.value.groups.map(g => g.investment.savings), backgroundColor: '#06D6A0', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
+                                        { label: 'ETF', data: sessionData.value.groups.map(g => g.investment.etf), backgroundColor: '#118AB2', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
+                                        { label: '股票', data: sessionData.value.groups.map(g => g.investment.stocks), backgroundColor: '#FFD166', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
+                                        { label: '創業', data: sessionData.value.groups.map(g => g.investment.entrepreneurship), backgroundColor: '#EF476F', stack: 'Stack 0', borderWidth: 2, borderColor: '#073B4C' },
+                                    ]
                                 },
-                                options: { responsive: true, maintainAspectRatio: false }
+                                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
                             });
                         }
                     }
@@ -863,7 +891,7 @@
                                 const labelSuffix = hasFailed ? " (風險爆發)" : ` (年化 ${(weightedReturn * 100).toFixed(1)}%)`;
 
                                 return {
-                                    label: `No.${rank} ${g.name}` + labelSuffix,
+                                    label: `No.${sorted.findIndex(s=>s.id===g.id)+1} ${g.name}` + labelSuffix,
                                     data: data,
                                     borderColor: distinctColor,
                                     backgroundColor: distinctColor,
